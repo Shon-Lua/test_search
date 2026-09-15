@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Flock3+ Hybrid Music Search</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #f5f5f7; padding: 20px; }
+    input { width: 300px; padding: 10px; font-size: 16px; }
+    button { padding: 10px 15px; font-size: 16px; margin-left: 10px; }
+    .track {
+        background: white; padding: 10px; margin-top: 10px;
+        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .error { color: #b00; }
+</style>
+</head>
+<body>
+
+<h2>Гибридный поиск треков (MusicBrainz + MP3 сервис)</h2>
+
+<input id="query" placeholder="Введите название трека"
+       onkeydown="if(event.key==='Enter') search()">
+<button onclick="search()">Искать</button>
+
+<div id="results"></div>
+
+<script>
+// ⚠️ Замени на свой реальный MP3-сервис.
+// Если сервиса нет — оставь null, тогда будет писаться «Не найден».
+const MP3_SERVICE = null; // например: "https://my-mp3.example/api/find"
+
+async function search() {
+    const q = document.getElementById("query").value.trim();
+    const resultsDiv = document.getElementById("results");
+
+    if (!q) {
+        resultsDiv.innerHTML = '<p class="error">Введите название трека</p>';
+        return;
+    }
+
+    resultsDiv.innerHTML = "Ищу...";
+
+    const mbUrl = `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=8`;
+
+    let mbData;
+    try {
+        const resp = await fetch(mbUrl, {
+            headers: {
+                // MusicBrainz требует осмысленный User-Agent
+                "User-Agent": "Flock3Plus/1.0 ( test@example.com )"
+            }
+        });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        mbData = await resp.json();
+    } catch (e) {
+        resultsDiv.innerHTML = `<p class="error">Ошибка MusicBrainz: ${e.message}</p>`;
+        return;
+    }
+
+    const recordings = mbData.recordings || [];
+    if (!recordings.length) {
+        resultsDiv.innerHTML = "<p>Ничего не найдено.</p>";
+        return;
+    }
+
+    resultsDiv.innerHTML = "";
+
+    for (const rec of recordings) {
+        const title  = rec.title || "Без названия";
+        const artist = rec["artist-credit"]?.[0]?.name || "Unknown";
+        const lengthMs = rec.length || 0;
+
+        let mp3Link = null;
+        if (MP3_SERVICE) {
+            try {
+                const mp3Url = `${MP3_SERVICE}?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+                const mp3Data = await fetch(mp3Url).then(r => r.json());
+                mp3Link = mp3Data.url || null;
+            } catch { mp3Link = null; }
+        }
+
+        const div = document.createElement("div");
+        div.className = "track";
+        div.innerHTML = `
+            <b>${escapeHtml(title)}</b><br>
+            Артист: ${escapeHtml(artist)}<br>
+            Длительность: ${lengthMs ? (lengthMs/1000).toFixed(0) + " сек" : "—"}<br>
+            MP3: ${mp3Link
+                ? `<a href="${mp3Link}" target="_blank" rel="noopener">Скачать</a>`
+                : "Не найден"}
+        `;
+        resultsDiv.appendChild(div);
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    })[c]);
+}
+</script>
+
+</body>
+</html>
