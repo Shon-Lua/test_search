@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Flock3+ Hybrid Music Search</title>
+<title>Поиск треков (Audius)</title>
 <style>
     body { font-family: Arial, sans-serif; background: #f5f5f7; padding: 20px; }
     input { width: 300px; padding: 10px; font-size: 16px; }
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<h2>Гибридный поиск треков (MusicBrainz + MP3 сервис)</h2>
+<h2>Поиск треков (Audius)</h2>
 
 <input id="query" placeholder="Введите название трека"
        onkeydown="if(event.key==='Enter') search()">
@@ -25,29 +25,7 @@
 <div id="results"></div>
 
 <script>
-const USER_AGENT = "Flock3Plus/1.0 ( your-email@example.com )";
-const MB_MIN_INTERVAL = 1100;
-let lastMbRequest = 0;
-
-async function fetchMusicBrainz(url, retries = 3) {
-    const now = Date.now();
-    const wait = MB_MIN_INTERVAL - (now - lastMbRequest);
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
-    lastMbRequest = Date.now();
-
-    const resp = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT }
-    });
-
-    if (resp.status === 503 && retries > 0) {
-        const retryAfter = parseInt(resp.headers.get("Retry-After") || "2", 10);
-        await new Promise(r => setTimeout(r, retryAfter * 1000));
-        return fetchMusicBrainz(url, retries - 1);
-    }
-
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    return resp.json();
-}
+const AUDIUS_HOST = "https://discoveryprovider.audius.co";
 
 async function search() {
     const q = document.getElementById("query").value.trim();
@@ -60,36 +38,39 @@ async function search() {
 
     resultsDiv.innerHTML = "Ищу...";
 
-    const mbUrl = `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=8`;
+    const url = `${AUDIUS_HOST}/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=Flock3Plus`;
 
-    let mbData;
+    let data;
     try {
-        mbData = await fetchMusicBrainz(mbUrl);
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        data = await resp.json();
     } catch (e) {
-        resultsDiv.innerHTML = `<p class="error">Ошибка MusicBrainz: ${e.message}</p>`;
+        resultsDiv.innerHTML = `<p class="error">Ошибка: ${e.message}</p>`;
         return;
     }
 
-    const recordings = mbData.recordings || [];
-    if (!recordings.length) {
+    const tracks = data.data || [];
+    if (!tracks.length) {
         resultsDiv.innerHTML = "<p>Ничего не найдено.</p>";
         return;
     }
 
     resultsDiv.innerHTML = "";
 
-    for (const rec of recordings) {
-        const title  = rec.title || "Без названия";
-        const artist = rec["artist-credit"]?.[0]?.name || "Unknown";
-        const lengthMs = rec.length || 0;
+    for (const track of tracks) {
+        const title = track.title || "Без названия";
+        const artist = track.user?.name || "Unknown";
+        const trackId = track.id;
+
+        const streamUrl = `${AUDIUS_HOST}/v1/tracks/${trackId}/stream?app_name=Flock3Plus`;
 
         const div = document.createElement("div");
         div.className = "track";
         div.innerHTML = `
             <b>${escapeHtml(title)}</b><br>
             Артист: ${escapeHtml(artist)}<br>
-            Длительность: ${lengthMs ? (lengthMs/1000).toFixed(0) + " сек" : "—"}<br>
-            MP3: Не найден
+            <a href="${streamUrl}" target="_blank" rel="noopener">Слушать / Скачать</a>
         `;
         resultsDiv.appendChild(div);
     }
