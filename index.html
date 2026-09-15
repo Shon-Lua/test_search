@@ -5,20 +5,22 @@
 <title>Поиск треков (Audius)</title>
 <style>
     body { font-family: Arial, sans-serif; background: #f5f5f7; padding: 20px; }
-    input { width: 300px; padding: 10px; font-size: 16px; }
+    input { width: 400px; padding: 10px; font-size: 16px; }
     button { padding: 10px 15px; font-size: 16px; margin-left: 10px; }
     .track {
-        background: white; padding: 10px; margin-top: 10px;
+        background: white; padding: 12px; margin-top: 10px;
         border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    .track audio { width: 100%; margin-top: 8px; }
     .error { color: #b00; }
+    .muted { color: #777; font-size: 14px; }
 </style>
 </head>
 <body>
 
-<h2>Поиск треков (Audius)</h2>
+<h2>Поиск треков и исполнителей (Audius)</h2>
 
-<input id="query" placeholder="Введите название трека"
+<input id="query" placeholder="Название трека или исполнитель"
        onkeydown="if(event.key==='Enter') search()">
 <button onclick="search()">Искать</button>
 
@@ -26,19 +28,21 @@
 
 <script>
 const AUDIUS_HOST = "https://discoveryprovider.audius.co";
+const APP_NAME = "Flock3Plus";
+const LIMIT = 30;
 
 async function search() {
     const q = document.getElementById("query").value.trim();
     const resultsDiv = document.getElementById("results");
 
     if (!q) {
-        resultsDiv.innerHTML = '<p class="error">Введите название трека</p>';
+        resultsDiv.innerHTML = '<p class="error">Введите запрос</p>';
         return;
     }
 
     resultsDiv.innerHTML = "Ищу...";
 
-    const url = `${AUDIUS_HOST}/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=Flock3Plus`;
+    const url = `${AUDIUS_HOST}/v1/tracks/search?query=${encodeURIComponent(q)}&limit=${LIMIT}&app_name=${APP_NAME}`;
 
     let data;
     try {
@@ -56,24 +60,31 @@ async function search() {
         return;
     }
 
-    resultsDiv.innerHTML = "";
+    resultsDiv.innerHTML = `<p class="muted">Найдено треков: ${tracks.length}</p>`;
 
     for (const track of tracks) {
         const title = track.title || "Без названия";
         const artist = track.user?.name || "Unknown";
         const trackId = track.id;
-
-        const streamUrl = `${AUDIUS_HOST}/v1/tracks/${trackId}/stream?app_name=Flock3Plus`;
+        const duration = track.duration || 0;
+        const streamUrl = `${AUDIUS_HOST}/v1/tracks/${trackId}/stream?app_name=${APP_NAME}`;
 
         const div = document.createElement("div");
         div.className = "track";
         div.innerHTML = `
             <b>${escapeHtml(title)}</b><br>
-            Артист: ${escapeHtml(artist)}<br>
-            <a href="${streamUrl}" target="_blank" rel="noopener">Слушать / Скачать</a>
+            <span class="muted">Исполнитель: ${escapeHtml(artist)} • ${formatDuration(duration)}</span>
+            <audio controls preload="none" src="${streamUrl}"></audio>
         `;
         resultsDiv.appendChild(div);
     }
+}
+
+function formatDuration(sec) {
+    if (!sec) return "—";
+    const m = Math.floor(sec / 60);
+    const s = String(sec % 60).padStart(2, "0");
+    return `${m}:${s}`;
 }
 
 function escapeHtml(s) {
