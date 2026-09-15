@@ -25,9 +25,29 @@
 <div id="results"></div>
 
 <script>
-// ⚠️ Замени на свой реальный MP3-сервис.
-// Если сервиса нет — оставь null, тогда будет писаться «Не найден».
-const MP3_SERVICE = null; // например: "https://my-mp3.example/api/find"
+const USER_AGENT = "Flock3Plus/1.0 ( your-email@example.com )";
+const MB_MIN_INTERVAL = 1100;
+let lastMbRequest = 0;
+
+async function fetchMusicBrainz(url, retries = 3) {
+    const now = Date.now();
+    const wait = MB_MIN_INTERVAL - (now - lastMbRequest);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    lastMbRequest = Date.now();
+
+    const resp = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT }
+    });
+
+    if (resp.status === 503 && retries > 0) {
+        const retryAfter = parseInt(resp.headers.get("Retry-After") || "2", 10);
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+        return fetchMusicBrainz(url, retries - 1);
+    }
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    return resp.json();
+}
 
 async function search() {
     const q = document.getElementById("query").value.trim();
@@ -44,14 +64,7 @@ async function search() {
 
     let mbData;
     try {
-        const resp = await fetch(mbUrl, {
-            headers: {
-                // MusicBrainz требует осмысленный User-Agent
-                "User-Agent": "Flock3Plus/1.0 ( test@example.com )"
-            }
-        });
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        mbData = await resp.json();
+        mbData = await fetchMusicBrainz(mbUrl);
     } catch (e) {
         resultsDiv.innerHTML = `<p class="error">Ошибка MusicBrainz: ${e.message}</p>`;
         return;
@@ -70,24 +83,13 @@ async function search() {
         const artist = rec["artist-credit"]?.[0]?.name || "Unknown";
         const lengthMs = rec.length || 0;
 
-        let mp3Link = null;
-        if (MP3_SERVICE) {
-            try {
-                const mp3Url = `${MP3_SERVICE}?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
-                const mp3Data = await fetch(mp3Url).then(r => r.json());
-                mp3Link = mp3Data.url || null;
-            } catch { mp3Link = null; }
-        }
-
         const div = document.createElement("div");
         div.className = "track";
         div.innerHTML = `
             <b>${escapeHtml(title)}</b><br>
             Артист: ${escapeHtml(artist)}<br>
             Длительность: ${lengthMs ? (lengthMs/1000).toFixed(0) + " сек" : "—"}<br>
-            MP3: ${mp3Link
-                ? `<a href="${mp3Link}" target="_blank" rel="noopener">Скачать</a>`
-                : "Не найден"}
+            MP3: Не найден
         `;
         resultsDiv.appendChild(div);
     }
