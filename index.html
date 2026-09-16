@@ -12,6 +12,8 @@
         --border: rgba(255,255,255,0.07);
         --text: #ffffff;
         --muted: #a1a1aa;
+        --accent-1: #a855f7;
+        --accent-2: #ec4899;
     }
     html, body { height: 100%; }
     body {
@@ -128,7 +130,7 @@
         height: 36px;
         border-radius: 50%;
         border: none;
-        background: linear-gradient(135deg, #a855f7, #ec4899);
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
         color: #fff;
         cursor: pointer;
         display: flex;
@@ -142,7 +144,7 @@
     }
     .search-btn svg { width: 16px; height: 16px; }
 
-    main { padding: 40px 32px 160px; max-width: 1600px; margin: 0 auto; }
+    main { padding: 40px 32px 200px; max-width: 1600px; margin: 0 auto; }
 
     .section-head {
         display: flex;
@@ -160,11 +162,6 @@
         background-clip: text;
         color: transparent;
     }
-    .section-sub {
-        font-size: 14px;
-        color: var(--muted);
-        margin-left: auto;
-    }
     .clear-btn {
         background: rgba(255,255,255,0.05);
         border: 1px solid var(--border);
@@ -176,6 +173,7 @@
         font-weight: 600;
         transition: background 0.2s, border-color 0.2s;
         font-family: inherit;
+        margin-left: auto;
     }
     .clear-btn:hover {
         background: rgba(255,255,255,0.1);
@@ -250,7 +248,7 @@
         height: 48px;
         border-radius: 50%;
         border: none;
-        background: linear-gradient(135deg, #a855f7, #ec4899);
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
         color: #fff;
         cursor: pointer;
         display: flex;
@@ -330,6 +328,7 @@
         padding: 12px 0 24px;
     }
     .status.error { color: #f87171; }
+    .status:empty { padding: 0; }
 
     .loader {
         display: flex;
@@ -341,7 +340,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #a855f7, #ec4899);
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
         animation: bounce 1.2s ease-in-out infinite;
     }
     .loader span:nth-child(2) { animation-delay: 0.15s; }
@@ -360,29 +359,85 @@
         text-transform: uppercase;
     }
 
+    /* ==== Кастомный плеер ==== */
     .player {
         position: fixed;
         left: 50%;
         bottom: 20px;
         transform: translateX(-50%);
         width: calc(100% - 40px);
-        max-width: 900px;
-        height: 78px;
-        background: rgba(20,20,26,0.75);
+        max-width: 980px;
+        background: rgba(20,20,26,0.78);
         backdrop-filter: blur(24px) saturate(180%);
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 22px;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        gap: 16px;
         z-index: 60;
         box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(168,85,247,0.05);
+        padding: 12px 20px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1), opacity 0.3s;
+    }
+    .player.hidden {
+        transform: translateX(-50%) translateY(140%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .progress-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 11px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+    }
+    .progress-bar {
+        position: relative;
+        flex: 1;
+        height: 4px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: height 0.15s;
+    }
+    .progress-bar:hover { height: 6px; }
+    .progress-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+        border-radius: 999px;
+        transition: width 0.08s linear;
+    }
+    .progress-bar:hover .progress-fill { transition: none; }
+    .progress-thumb {
+        position: absolute;
+        top: 50%;
+        left: 0%;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.15s;
+        box-shadow: 0 0 10px rgba(236,72,153,0.6);
+        pointer-events: none;
+    }
+    .progress-bar:hover .progress-thumb { transform: translate(-50%, -50%) scale(1); }
+
+    .controls-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
     }
     .player-cover {
-        width: 52px;
-        height: 52px;
+        width: 48px;
+        height: 48px;
         border-radius: 10px;
         background: #1a1a1f;
         object-fit: cover;
@@ -390,9 +445,9 @@
         box-shadow: 0 6px 16px rgba(0,0,0,0.4);
     }
     .player-info {
-        width: 200px;
-        flex-shrink: 0;
+        flex: 1;
         overflow: hidden;
+        min-width: 0;
     }
     .player-info .t {
         font-size: 13px;
@@ -410,23 +465,82 @@
         text-overflow: ellipsis;
         margin-top: 2px;
     }
-    .empty-player { color: #52525b; font-size: 13px; font-weight: 400; }
 
-    audio {
-        flex: 1;
-        height: 40px;
-        filter: invert(0.92) hue-rotate(255deg) saturate(0.8);
-        border-radius: 20px;
+    .ctrl-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, transform 0.15s;
+        flex-shrink: 0;
     }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.08); }
+    .ctrl-btn:active { transform: scale(0.94); }
+    .ctrl-btn svg { width: 22px; height: 22px; }
+    .ctrl-btn.small svg { width: 18px; height: 18px; }
+
+    .play-btn {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+        box-shadow: 0 6px 20px rgba(168,85,247,0.5);
+    }
+    .play-btn:hover {
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+        transform: scale(1.06);
+        box-shadow: 0 8px 26px rgba(236,72,153,0.65);
+    }
+    .play-btn svg { width: 20px; height: 20px; }
+
+    .volume-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 130px;
+        flex-shrink: 0;
+    }
+    .volume-bar {
+        position: relative;
+        flex: 1;
+        height: 4px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 999px;
+        cursor: pointer;
+    }
+    .volume-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 80%;
+        background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+        border-radius: 999px;
+    }
+    .volume-bar:hover .volume-fill { background: #fff; }
+    .vol-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+    }
+    .vol-btn svg { width: 18px; height: 18px; }
 
     @media (max-width: 720px) {
         header { padding: 12px 16px; gap: 12px; }
-        main { padding: 24px 16px 140px; }
+        main { padding: 24px 16px 200px; }
         .section-title { font-size: 24px; }
         .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
-        .player-info { width: 90px; }
-        .player { height: 68px; padding: 0 12px; gap: 10px; bottom: 12px; width: calc(100% - 24px); }
-        .player-cover { width: 44px; height: 44px; }
+        .player { width: calc(100% - 24px); bottom: 12px; padding: 10px 14px 8px; }
+        .player-cover { width: 40px; height: 40px; }
+        .volume-wrap { display: none; }
+        .player-info { max-width: 120px; }
     }
 
     ::-webkit-scrollbar { width: 10px; }
@@ -463,8 +577,7 @@
 
 <main>
     <div class="section-head">
-        <div class="section-title" id="sectionTitle">Рекомендации за всё время</div>
-        <div class="section-sub" id="sectionSub"></div>
+        <div class="section-title" id="sectionTitle">Рекомендации</div>
         <button class="clear-btn" id="clearBtn" hidden onclick="exitSearch()">← Назад</button>
     </div>
 
@@ -473,14 +586,48 @@
     <div id="sentinel"></div>
 </main>
 
-<div class="player">
-    <img class="player-cover" id="playerCover" alt="" style="visibility:hidden">
-    <div class="player-info">
-        <div class="t" id="playerTitle"><span class="empty-player">Ничего не играет</span></div>
-        <div class="a" id="playerArtist"></div>
+<div class="player hidden" id="player">
+    <div class="progress-row">
+        <span id="timeCurrent">0:00</span>
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+            <div class="progress-thumb" id="progressThumb"></div>
+        </div>
+        <span id="timeTotal">0:00</span>
     </div>
-    <audio id="audio" controls preload="none"></audio>
+
+    <div class="controls-row">
+        <img class="player-cover" id="playerCover" alt="">
+        <div class="player-info">
+            <div class="t" id="playerTitle">—</div>
+            <div class="a" id="playerArtist"></div>
+        </div>
+
+        <button class="ctrl-btn small" id="prevBtn" title="Предыдущий">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+
+        <button class="ctrl-btn play-btn" id="playBtn" title="Играть">
+            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="pauseIcon" style="display:none" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+
+        <button class="ctrl-btn small" id="nextBtn" title="Следующий">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+        </button>
+
+        <div class="volume-wrap">
+            <button class="vol-btn" id="volBtn">
+                <svg id="volIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+            </button>
+            <div class="volume-bar" id="volumeBar">
+                <div class="volume-fill" id="volumeFill"></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<audio id="audio" preload="none"></audio>
 
 <script>
 const API_BASE = "https://api.audius.co";
@@ -491,21 +638,38 @@ const audioEl     = document.getElementById("audio");
 const gridEl      = document.getElementById("grid");
 const statusEl    = document.getElementById("status");
 const titleEl     = document.getElementById("sectionTitle");
-const subEl       = document.getElementById("sectionSub");
 const clearBtn    = document.getElementById("clearBtn");
+const sentinel    = document.getElementById("sentinel");
+
+const playerEl    = document.getElementById("player");
 const playerCover = document.getElementById("playerCover");
 const playerTitle = document.getElementById("playerTitle");
 const playerArtist= document.getElementById("playerArtist");
-const sentinel    = document.getElementById("sentinel");
+const playBtn     = document.getElementById("playBtn");
+const playIcon    = document.getElementById("playIcon");
+const pauseIcon   = document.getElementById("pauseIcon");
+const prevBtn     = document.getElementById("prevBtn");
+const nextBtn     = document.getElementById("nextBtn");
+const timeCurrent = document.getElementById("timeCurrent");
+const timeTotal   = document.getElementById("timeTotal");
+const progressBar = document.getElementById("progressBar");
+const progressFill= document.getElementById("progressFill");
+const progressThumb=document.getElementById("progressThumb");
+const volBtn      = document.getElementById("volBtn");
+const volIcon     = document.getElementById("volIcon");
+const volumeBar   = document.getElementById("volumeBar");
+const volumeFill  = document.getElementById("volumeFill");
 
 let mode = "trending";
-let currentTrackId = null;
-let currentCard = null;
 let offset = 0;
 let loading = false;
 let exhausted = false;
 
 const seenIds = new Set();
+const loadedTracks = [];
+let currentIndex = -1;
+let currentTrackId = null;
+
 const genrePool = [
     "Electronic", "Hip-Hop/Rap", "Rock", "Pop", "House", "Techno",
     "Dubstep", "Trap", "R&B/Soul", "Lo-Fi", "Ambient", "Drum & Bass",
@@ -514,41 +678,77 @@ const genrePool = [
 ];
 const timeWindows = ["allTime", "month", "week"];
 
-audioEl.addEventListener("ended", () => {
-    if (currentCard) currentCard.classList.remove("playing");
-    currentCard = null;
-    currentTrackId = null;
-});
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function playTrack(track, card) {
-    if (currentTrackId === track.id) {
-        if (audioEl.paused) {
-            audioEl.play().catch(e => console.error(e));
-            if (currentCard) currentCard.classList.add("playing");
-        } else {
-            audioEl.pause();
-            if (currentCard) currentCard.classList.remove("playing");
-        }
-        return;
+function formatTime(sec) {
+    if (!isFinite(sec) || sec < 0) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = String(Math.floor(sec % 60)).padStart(2, "0");
+    return `${m}:${s}`;
+}
+
+function setStatus(text, isError = false) {
+    statusEl.textContent = text;
+    statusEl.className = "status" + (isError ? " error" : "");
+}
+
+function updatePlayingCard() {
+    document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
+    if (currentTrackId) {
+        const card = document.querySelector(`.card[data-track-id="${currentTrackId}"]`);
+        if (card) card.classList.add("playing");
     }
-    if (currentCard && currentCard !== card) currentCard.classList.remove("playing");
+}
+
+function loadTrack(index, autoplay = true) {
+    if (index < 0 || index >= loadedTracks.length) return;
+    const track = loadedTracks[index];
+    currentIndex = index;
+    currentTrackId = track.id;
 
     audioEl.src = `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
-    audioEl.play().catch(e => console.error("play error:", e));
-
-    currentTrackId = track.id;
-    currentCard = card;
-    card.classList.add("playing");
 
     const cover = track.artwork?.["480x480"] || track.artwork?.["150x150"] || "";
-    if (cover) {
-        playerCover.src = cover;
-        playerCover.style.visibility = "visible";
-    } else {
-        playerCover.style.visibility = "hidden";
-    }
+    if (cover) playerCover.src = cover;
     playerTitle.textContent = track.title || "Без названия";
     playerArtist.textContent = track.user?.name || "Unknown";
+    playerEl.classList.remove("hidden");
+
+    updatePlayingCard();
+
+    if (autoplay) {
+        audioEl.play().catch(e => console.error("play error:", e));
+    }
+}
+
+function playTrack(track, card) {
+    const idx = loadedTracks.findIndex(t => t.id === track.id);
+    if (idx === -1) return;
+
+    if (currentTrackId === track.id) {
+        if (audioEl.paused) audioEl.play().catch(() => {});
+        else audioEl.pause();
+        return;
+    }
+    loadTrack(idx, true);
+}
+
+function playNext() {
+    if (currentIndex + 1 < loadedTracks.length) {
+        loadTrack(currentIndex + 1, true);
+    } else if (mode === "trending" && !exhausted) {
+        loadTrendingPage().then(() => {
+            if (currentIndex + 1 < loadedTracks.length) loadTrack(currentIndex + 1, true);
+        });
+    }
+}
+
+function playPrev() {
+    if (audioEl.currentTime > 3) {
+        audioEl.currentTime = 0;
+        return;
+    }
+    if (currentIndex > 0) loadTrack(currentIndex - 1, true);
 }
 
 function renderTrack(track) {
@@ -585,10 +785,6 @@ async function fetchAudius(path) {
     return data.data || [];
 }
 
-function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
 async function loadTrendingPage() {
     if (loading || exhausted) return;
     loading = true;
@@ -598,6 +794,7 @@ async function loadTrendingPage() {
         gridEl.innerHTML = "";
         removeEndMark();
         seenIds.clear();
+        loadedTracks.length = 0;
     } else {
         setStatus("");
         showLoader();
@@ -609,30 +806,22 @@ async function loadTrendingPage() {
 
         while (added < PAGE_SIZE && attempts < 6) {
             attempts++;
-
             const time = attempts === 1 ? "allTime" : pick(timeWindows);
-            const genre = attempts === 1
-                ? ""
-                : (attempts % 2 === 0 ? pick(genrePool) : "");
-
+            const genre = attempts === 1 ? "" : (attempts % 2 === 0 ? pick(genrePool) : "");
             const genrePart = genre ? `&genre=${encodeURIComponent(genre)}` : "";
             const path = `/v1/tracks/trending?time=${time}&limit=${PAGE_SIZE}${genrePart}`;
 
             let tracks;
-            try {
-                tracks = await fetchAudius(path);
-            } catch (e) {
-                if (attempts >= 6) throw e;
-                continue;
-            }
+            try { tracks = await fetchAudius(path); }
+            catch (e) { if (attempts >= 6) throw e; continue; }
 
             if (!tracks.length) continue;
 
             const shuffled = tracks.slice().sort(() => Math.random() - 0.5);
-
             for (const t of shuffled) {
                 if (seenIds.has(t.id)) continue;
                 seenIds.add(t.id);
+                loadedTracks.push(t);
                 const card = renderTrack(t);
                 card.style.animationDelay = (added * 15) + "ms";
                 gridEl.appendChild(card);
@@ -645,17 +834,13 @@ async function loadTrendingPage() {
 
         if (added === 0) {
             exhausted = true;
-            if (offset === 0) {
-                setStatus("Пока нет треков.");
-            } else {
-                showEndMark();
-            }
+            if (offset === 0) setStatus("Пока нет треков.");
+            else showEndMark();
             loading = false;
             return;
         }
 
         offset += added;
-        subEl.textContent = `загружено ${offset}`;
         setStatus("");
     } catch (e) {
         hideLoader();
@@ -671,6 +856,7 @@ async function loadSearch(q) {
     gridEl.innerHTML = "";
     removeEndMark();
     seenIds.clear();
+    loadedTracks.length = 0;
 
     try {
         const tracks = await fetchAudius(
@@ -678,18 +864,17 @@ async function loadSearch(q) {
         );
         if (!tracks.length) {
             setStatus("Ничего не найдено.");
-            subEl.textContent = "";
             loading = false;
             return;
         }
         tracks.forEach((t, i) => {
             if (seenIds.has(t.id)) return;
             seenIds.add(t.id);
+            loadedTracks.push(t);
             const card = renderTrack(t);
             card.style.animationDelay = (i * 15) + "ms";
             gridEl.appendChild(card);
         });
-        subEl.textContent = `найдено ${tracks.length}`;
         setStatus("");
     } catch (e) {
         setStatus("Ошибка: " + e.message, true);
@@ -700,12 +885,10 @@ async function loadSearch(q) {
 function doSearch() {
     const q = document.getElementById("query").value.trim();
     if (!q) return;
-
     mode = "search";
     offset = 0;
     titleEl.textContent = "Поиск";
     clearBtn.hidden = false;
-    subEl.textContent = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
     loadSearch(q);
 }
@@ -715,17 +898,12 @@ function exitSearch() {
     mode = "trending";
     offset = 0;
     exhausted = false;
-    titleEl.textContent = "Рекомендации за всё время";
+    titleEl.textContent = "Рекомендации";
     clearBtn.hidden = true;
-    subEl.textContent = "";
     removeEndMark();
     loadTrendingPage();
 }
 
-function setStatus(text, isError = false) {
-    statusEl.textContent = text;
-    statusEl.className = "status" + (isError ? " error" : "");
-}
 function showLoader() {
     if (document.getElementById("loaderEl")) return;
     const d = document.createElement("div");
@@ -751,12 +929,104 @@ function removeEndMark() {
     if (el) el.remove();
 }
 
+/* ==== Управление плеером ==== */
+
+playBtn.addEventListener("click", () => {
+    if (!audioEl.src) return;
+    if (audioEl.paused) audioEl.play().catch(() => {});
+    else audioEl.pause();
+});
+
+nextBtn.addEventListener("click", playNext);
+prevBtn.addEventListener("click", playPrev);
+
+audioEl.addEventListener("play", () => {
+    playIcon.style.display = "none";
+    pauseIcon.style.display = "";
+});
+audioEl.addEventListener("pause", () => {
+    playIcon.style.display = "";
+    pauseIcon.style.display = "none";
+});
+
+audioEl.addEventListener("loadedmetadata", () => {
+    timeTotal.textContent = formatTime(audioEl.duration);
+});
+
+audioEl.addEventListener("timeupdate", () => {
+    const pct = audioEl.duration ? (audioEl.currentTime / audioEl.duration) * 100 : 0;
+    progressFill.style.width = pct + "%";
+    progressThumb.style.left = pct + "%";
+    timeCurrent.textContent = formatTime(audioEl.currentTime);
+});
+
+audioEl.addEventListener("ended", () => {
+    playNext();
+});
+
+let seeking = false;
+function seekAt(e) {
+    const rect = progressBar.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    if (audioEl.duration) {
+        audioEl.currentTime = pct * audioEl.duration;
+        progressFill.style.width = (pct * 100) + "%";
+        progressThumb.style.left = (pct * 100) + "%";
+    }
+}
+progressBar.addEventListener("mousedown", (e) => {
+    seeking = true;
+    seekAt(e);
+});
+window.addEventListener("mousemove", (e) => { if (seeking) seekAt(e); });
+window.addEventListener("mouseup", () => { seeking = false; });
+progressBar.addEventListener("touchstart", (e) => { seekAt(e); }, { passive: true });
+progressBar.addEventListener("touchmove", (e) => { seekAt(e); }, { passive: true });
+
+let currentVol = 0.8;
+let prevVol = 0.8;
+audioEl.volume = currentVol;
+volumeFill.style.width = (currentVol * 100) + "%";
+
+function setVolume(v) {
+    currentVol = Math.max(0, Math.min(1, v));
+    audioEl.volume = currentVol;
+    volumeFill.style.width = (currentVol * 100) + "%";
+    volIcon.style.opacity = currentVol === 0 ? "0.4" : "1";
+}
+function volSeek(e) {
+    const rect = volumeBar.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    setVolume(x / rect.width);
+}
+let volSeeking = false;
+volumeBar.addEventListener("mousedown", (e) => { volSeeking = true; volSeek(e); });
+window.addEventListener("mousemove", (e) => { if (volSeeking) volSeek(e); });
+window.addEventListener("mouseup", () => { volSeeking = false; });
+volumeBar.addEventListener("touchstart", (e) => { volSeek(e); }, { passive: true });
+volumeBar.addEventListener("touchmove", (e) => { volSeek(e); }, { passive: true });
+volBtn.addEventListener("click", () => {
+    if (currentVol > 0) { prevVol = currentVol; setVolume(0); }
+    else setVolume(prevVol || 0.8);
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.code === "Space") { e.preventDefault(); playBtn.click(); }
+    else if (e.code === "ArrowRight" && audioEl.duration) {
+        audioEl.currentTime = Math.min(audioEl.duration, audioEl.currentTime + 5);
+    }
+    else if (e.code === "ArrowLeft" && audioEl.duration) {
+        audioEl.currentTime = Math.max(0, audioEl.currentTime - 5);
+    }
+});
+
 const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && mode === "trending" && !loading && !exhausted) {
         loadTrendingPage();
     }
 }, { rootMargin: "900px" });
-
 observer.observe(sentinel);
 
 function escapeHtml(s) {
