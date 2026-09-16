@@ -2,261 +2,495 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Music Search</title>
+<title>Music</title>
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        background: #121212;
-        color: #fff;
-        min-height: 100vh;
+    :root {
+        --bg: #08080c;
+        --card: rgba(255,255,255,0.035);
+        --card-hover: rgba(255,255,255,0.07);
+        --border: rgba(255,255,255,0.07);
+        --text: #ffffff;
+        --muted: #a1a1aa;
+        --accent: #a855f7;
+        --accent-2: #ec4899;
+        --accent-3: #06b6d4;
     }
+    html, body { height: 100%; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ==== Абстрактный фон ==== */
+    .bg {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.55;
+        will-change: transform;
+    }
+    .blob.b1 {
+        width: 520px; height: 520px;
+        background: #7c3aed;
+        top: -180px; left: -120px;
+        animation: float1 22s ease-in-out infinite;
+    }
+    .blob.b2 {
+        width: 460px; height: 460px;
+        background: #ec4899;
+        top: 30%; right: -160px;
+        animation: float2 26s ease-in-out infinite;
+    }
+    .blob.b3 {
+        width: 400px; height: 400px;
+        background: #06b6d4;
+        bottom: -160px; left: 30%;
+        animation: float3 30s ease-in-out infinite;
+    }
+    .grid-overlay {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: 60px 60px;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+    @keyframes float1 {
+        0%,100% { transform: translate(0,0) scale(1); }
+        50%     { transform: translate(80px,60px) scale(1.15); }
+    }
+    @keyframes float2 {
+        0%,100% { transform: translate(0,0) scale(1); }
+        50%     { transform: translate(-100px,80px) scale(1.1); }
+    }
+    @keyframes float3 {
+        0%,100% { transform: translate(0,0) scale(1); }
+        50%     { transform: translate(60px,-90px) scale(1.2); }
+    }
+
+    /* ==== Шапка ==== */
     header {
-        background: #000;
-        padding: 16px 32px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        padding: 18px 32px;
         display: flex;
         align-items: center;
         gap: 24px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        background: rgba(8,8,12,0.55);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .logo {
-        font-weight: 700;
+        font-weight: 800;
         font-size: 20px;
-        color: #1db954;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.6px;
+        background: linear-gradient(135deg, #a855f7, #ec4899 50%, #06b6d4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        white-space: nowrap;
     }
-    .search-wrap { flex: 1; max-width: 500px; position: relative; }
+    .logo::after {
+        content: ".";
+        color: #ec4899;
+        -webkit-text-fill-color: #ec4899;
+    }
+    .search-wrap {
+        flex: 1;
+        max-width: 560px;
+        position: relative;
+    }
     input {
         width: 100%;
-        padding: 12px 44px 12px 18px;
+        padding: 13px 50px 13px 20px;
         font-size: 14px;
-        border-radius: 500px;
-        border: none;
-        background: #242424;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.04);
         color: #fff;
         outline: none;
-        transition: background 0.2s;
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        font-family: inherit;
     }
-    input:focus { background: #2a2a2a; }
-    input::placeholder { color: #a7a7a7; }
+    input::placeholder { color: #71717a; }
+    input:focus {
+        border-color: rgba(168,85,247,0.6);
+        background: rgba(255,255,255,0.06);
+        box-shadow: 0 0 0 4px rgba(168,85,247,0.12);
+    }
     .search-btn {
         position: absolute;
-        right: 6px;
+        right: 5px;
         top: 50%;
         transform: translateY(-50%);
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         border: none;
-        background: #1db954;
-        color: #000;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        color: #fff;
         cursor: pointer;
-        font-size: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    .search-btn:hover { background: #1ed760; }
+    .search-btn:hover {
+        transform: translateY(-50%) scale(1.08);
+        box-shadow: 0 0 20px rgba(236,72,153,0.5);
+    }
+    .search-btn svg { width: 16px; height: 16px; }
 
-    main { padding: 24px 32px 120px; }
+    /* ==== Main ==== */
+    main { padding: 40px 32px 160px; max-width: 1600px; margin: 0 auto; }
 
-    section { margin-bottom: 36px; }
-    section h2 {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 18px;
+    .section-head {
         display: flex;
-        align-items: center;
-        gap: 10px;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .section-title {
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.1;
+        background: linear-gradient(120deg, #fff 30%, #a1a1aa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .section-sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin-left: auto;
     }
     .clear-btn {
-        background: #2a2a2a;
-        border: none;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
         color: #fff;
         font-size: 12px;
-        padding: 6px 12px;
-        border-radius: 500px;
+        padding: 8px 14px;
+        border-radius: 999px;
         cursor: pointer;
-        margin-left: auto;
-        font-weight: 500;
+        font-weight: 600;
+        transition: background 0.2s, border-color 0.2s;
+        font-family: inherit;
     }
-    .clear-btn:hover { background: #3a3a3a; }
-
-    .status {
-        color: #a7a7a7;
-        font-size: 14px;
-        padding: 8px 0 16px;
+    .clear-btn:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
     }
-    .status.error { color: #f15e6c; }
 
+    /* ==== Сетка карточек ==== */
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 22px;
     }
 
     .card {
-        background: #181818;
-        border-radius: 8px;
-        padding: 16px;
-        cursor: pointer;
-        transition: background 0.2s;
         position: relative;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 14px;
+        cursor: pointer;
+        transition: background 0.25s, border-color 0.25s, transform 0.25s;
+        overflow: hidden;
+        animation: cardIn 0.4s ease backwards;
     }
-    .card:hover { background: #282828; }
+    @keyframes cardIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .card:hover {
+        background: var(--card-hover);
+        border-color: rgba(168,85,247,0.35);
+        transform: translateY(-4px);
+    }
+    .card.playing {
+        border-color: rgba(168,85,247,0.6);
+        background: linear-gradient(180deg, rgba(168,85,247,0.1), rgba(236,72,153,0.04));
+    }
 
     .cover-wrap {
         position: relative;
         width: 100%;
         aspect-ratio: 1 / 1;
-        border-radius: 6px;
+        border-radius: 12px;
         overflow: hidden;
         margin-bottom: 14px;
-        background: #2a2a2a;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        background: #1a1a1f;
     }
     .cover-wrap img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
+        transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.1);
     }
+    .card:hover .cover-wrap img { transform: scale(1.06); }
+
+    .cover-wrap::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.5));
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+    .card:hover .cover-wrap::after { opacity: 1; }
 
     .play-overlay {
         position: absolute;
-        right: 8px;
-        bottom: 8px;
+        right: 10px;
+        bottom: 10px;
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        background: #1db954;
         border: none;
-        color: #000;
-        font-size: 18px;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        color: #fff;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transform: translateY(8px);
-        transition: all 0.2s;
-        cursor: pointer;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        transform: translateY(10px) scale(0.9);
+        transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+        z-index: 2;
+        box-shadow: 0 8px 24px rgba(168,85,247,0.5);
     }
+    .play-overlay svg { width: 18px; height: 18px; }
     .card:hover .play-overlay,
     .card.playing .play-overlay {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
-    .play-overlay:hover { transform: scale(1.06) !important; background: #1ed760; }
+    .play-overlay:hover { transform: scale(1.1) !important; }
 
     .title {
-        font-size: 15px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 4px;
-    }
-    .artist {
-        font-size: 13px;
-        color: #a7a7a7;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .card.playing .title { color: #1db954; }
-
-    .player {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 90px;
-        background: #181818;
-        border-top: 1px solid #282828;
-        display: flex;
-        align-items: center;
-        padding: 0 24px;
-        gap: 20px;
-        z-index: 20;
-    }
-    .player-cover {
-        width: 56px;
-        height: 56px;
-        border-radius: 4px;
-        background: #2a2a2a;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-    .player-info {
-        width: 220px;
-        flex-shrink: 0;
-        overflow: hidden;
-    }
-    .player-info .t {
         font-size: 14px;
         font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-bottom: 4px;
+        letter-spacing: -0.2px;
     }
-    .player-info .a {
+    .artist {
         font-size: 12px;
-        color: #a7a7a7;
+        color: var(--muted);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .card.playing .title {
+        background: linear-gradient(90deg, #a855f7, #ec4899, #06b6d4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Эквалайзер на играющей карточке */
+    .eq {
+        position: absolute;
+        top: 22px;
+        left: 22px;
+        display: none;
+        gap: 2px;
+        align-items: flex-end;
+        height: 16px;
+        padding: 4px 6px;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(6px);
+        border-radius: 6px;
+        z-index: 2;
+    }
+    .card.playing .eq { display: flex; }
+    .eq span {
+        width: 3px;
+        background: linear-gradient(180deg, #a855f7, #ec4899);
+        border-radius: 2px;
+        animation: eq 0.9s ease-in-out infinite;
+    }
+    .eq span:nth-child(1) { animation-delay: 0s;    height: 60%; }
+    .eq span:nth-child(2) { animation-delay: 0.15s; height: 100%; }
+    .eq span:nth-child(3) { animation-delay: 0.3s;  height: 40%; }
+    .eq span:nth-child(4) { animation-delay: 0.45s; height: 80%; }
+    @keyframes eq {
+        0%, 100% { transform: scaleY(0.3); }
+        50%      { transform: scaleY(1); }
+    }
+
+    /* ==== Статус / загрузка ==== */
+    .status {
+        color: var(--muted);
+        font-size: 14px;
+        padding: 12px 0 24px;
+    }
+    .status.error { color: #f87171; }
+
+    .loader {
+        display: flex;
+        justify-content: center;
+        padding: 40px 0 20px;
+        gap: 8px;
+    }
+    .loader span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        animation: bounce 1.2s ease-in-out infinite;
+    }
+    .loader span:nth-child(2) { animation-delay: 0.15s; }
+    .loader span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+        30%           { transform: translateY(-10px); opacity: 1; }
+    }
+
+    .end-mark {
+        text-align: center;
+        color: #52525b;
+        font-size: 13px;
+        padding: 40px 0 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    /* ==== Плеер ==== */
+    .player {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 900px;
+        height: 78px;
+        background: rgba(20,20,26,0.75);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        z-index: 60;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(168,85,247,0.05);
+    }
+    .player-cover {
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        background: #1a1a1f;
+        object-fit: cover;
+        flex-shrink: 0;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+    .player-info {
+        width: 200px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .player-info .t {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: -0.2px;
+    }
+    .player-info .a {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+    }
+    .empty-player { color: #52525b; font-size: 13px; font-weight: 400; }
+
     audio {
         flex: 1;
         height: 40px;
-        filter: invert(0.9) hue-rotate(90deg);
+        filter: invert(0.92) hue-rotate(255deg) saturate(0.8);
+        border-radius: 20px;
     }
-    .empty-player { color: #6a6a6a; font-size: 14px; font-weight: 400; }
 
-    @media (max-width: 640px) {
+    @media (max-width: 720px) {
         header { padding: 12px 16px; gap: 12px; }
-        main { padding: 16px 16px 120px; }
-        .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
-        .player-info { width: 100px; }
-        section h2 { font-size: 18px; }
+        main { padding: 24px 16px 140px; }
+        .section-title { font-size: 24px; }
+        .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+        .player-info { width: 90px; }
+        .player { height: 68px; padding: 0 12px; gap: 10px; bottom: 12px; width: calc(100% - 24px); }
+        .player-cover { width: 44px; height: 44px; }
     }
+
+    /* скроллбар */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.08);
+        border-radius: 10px;
+        border: 2px solid var(--bg);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(168,85,247,0.4); }
 </style>
 </head>
 <body>
 
+<div class="bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="grid-overlay"></div>
+</div>
+
 <header>
-    <div class="logo">Music</div>
+    <div class="logo">sonic</div>
     <div class="search-wrap">
-        <input id="query" placeholder="Трек, исполнитель..."
-               onkeydown="if(event.key==='Enter') search()">
-        <button class="search-btn" onclick="search()">🔍</button>
+        <input id="query" placeholder="Что послушаем? Трек или исполнитель…"
+               onkeydown="if(event.key==='Enter') doSearch()">
+        <button class="search-btn" onclick="doSearch()" aria-label="Искать">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </button>
     </div>
 </header>
 
 <main>
-    <section id="search-section" hidden>
-        <h2>
-            <span>Результаты поиска</span>
-            <button class="clear-btn" onclick="clearSearch()">Сбросить</button>
-        </h2>
-        <div id="search-status" class="status"></div>
-        <div class="grid" id="search-results"></div>
-    </section>
+    <div class="section-head">
+        <div class="section-title" id="sectionTitle">Рекомендации года</div>
+        <div class="section-sub" id="sectionSub"></div>
+        <button class="clear-btn" id="clearBtn" hidden onclick="exitSearch()">← Назад</button>
+    </div>
 
-    <section id="trending-section">
-        <h2>🔥 В тренде за неделю</h2>
-        <div id="trending-status" class="status">Загрузка...</div>
-        <div class="grid" id="trending-results"></div>
-    </section>
-
-    <section id="reco-section">
-        <h2>✨ Рекомендации</h2>
-        <div id="reco-status" class="status">Загрузка...</div>
-        <div class="grid" id="reco-results"></div>
-    </section>
+    <div class="status" id="status">Загрузка…</div>
+    <div class="grid" id="grid"></div>
+    <div id="sentinel"></div>
 </main>
 
 <div class="player">
@@ -271,26 +505,33 @@
 <script>
 const AUDIUS_HOST = "https://discoveryprovider.audius.co";
 const APP_NAME = "Flock3Plus";
+const PAGE_SIZE = 24;
 
-const audioEl = document.getElementById("audio");
-const playerCover = document.getElementById("playerCover");
-const playerTitle = document.getElementById("playerTitle");
-const playerArtist = document.getElementById("playerArtist");
+const audioEl    = document.getElementById("audio");
+const gridEl     = document.getElementById("grid");
+const statusEl   = document.getElementById("status");
+const titleEl    = document.getElementById("sectionTitle");
+const subEl      = document.getElementById("sectionSub");
+const clearBtn   = document.getElementById("clearBtn");
+const playerCover= document.getElementById("playerCover");
+const playerTitle= document.getElementById("playerTitle");
+const playerArtist=document.getElementById("playerArtist");
+const sentinel   = document.getElementById("sentinel");
 
+let mode = "trending";     // "trending" | "search"
 let currentTrackId = null;
 let currentCard = null;
+let offset = 0;
+let loading = false;
+let exhausted = false;
+let searchQuery = "";
 
+/* ==== Плеер ==== */
 audioEl.addEventListener("ended", () => {
     if (currentCard) currentCard.classList.remove("playing");
     currentCard = null;
     currentTrackId = null;
 });
-
-function setStatus(elId, text, isError = false) {
-    const el = document.getElementById(elId);
-    el.textContent = text;
-    el.className = "status" + (isError ? " error" : "");
-}
 
 function playTrack(track, card) {
     if (currentTrackId === track.id) {
@@ -303,10 +544,7 @@ function playTrack(track, card) {
         }
         return;
     }
-
-    if (currentCard && currentCard !== card) {
-        currentCard.classList.remove("playing");
-    }
+    if (currentCard && currentCard !== card) currentCard.classList.remove("playing");
 
     audioEl.src = `${AUDIUS_HOST}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
     audioEl.play().catch(e => console.error("play error:", e));
@@ -326,6 +564,7 @@ function playTrack(track, card) {
     playerArtist.textContent = track.user?.name || "Unknown";
 }
 
+/* ==== Рендер карточки ==== */
 function renderTrack(track) {
     const cover = track.artwork?.["480x480"] || track.artwork?.["150x150"] || "";
     const title = track.title || "Без названия";
@@ -334,24 +573,25 @@ function renderTrack(track) {
     const card = document.createElement("div");
     card.className = "card";
     card.dataset.trackId = track.id;
+
     card.innerHTML = `
         <div class="cover-wrap">
             ${cover ? `<img src="${cover}" alt="" loading="lazy">` : ""}
-            <button class="play-overlay">▶</button>
+            <div class="eq"><span></span><span></span><span></span><span></span></div>
+            <button class="play-overlay" aria-label="Play">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
         </div>
         <div class="title">${escapeHtml(title)}</div>
         <div class="artist">${escapeHtml(artist)}</div>
     `;
 
     card.addEventListener("click", () => playTrack(track, card));
-
-    if (currentTrackId === track.id) {
-        card.classList.add("playing");
-    }
-
+    if (currentTrackId === track.id) card.classList.add("playing");
     return card;
 }
 
+/* ==== API ==== */
 async function fetchAudius(path) {
     const url = `${AUDIUS_HOST}${path}${path.includes("?") ? "&" : "?"}app_name=${APP_NAME}`;
     const resp = await fetch(url);
@@ -360,73 +600,162 @@ async function fetchAudius(path) {
     return data.data || [];
 }
 
-async function loadTrending() {
-    try {
-        const tracks = await fetchAudius("/v1/tracks/trending?time=week&limit=18");
-        const grid = document.getElementById("trending-results");
-        grid.innerHTML = "";
-        tracks.forEach(t => grid.appendChild(renderTrack(t)));
-        setStatus("trending-status", "");
-    } catch (e) {
-        setStatus("trending-status", "Ошибка загрузки трендов: " + e.message, true);
+/* ==== Загрузка трендов (бесконечный скролл) ==== */
+async function loadTrendingPage() {
+    if (loading || exhausted) return;
+    loading = true;
+
+    if (offset === 0) {
+        setStatus("Загрузка…");
+        gridEl.innerHTML = "";
+    } else {
+        setStatus("");
+        showLoader();
     }
+
+    try {
+        const tracks = await fetchAudius(
+            `/v1/tracks/trending?time=year&limit=${PAGE_SIZE}&offset=${offset}`
+        );
+
+        hideLoader();
+
+        if (!tracks.length) {
+            exhausted = true;
+            if (offset === 0) {
+                setStatus("Пока нет треков.");
+            } else {
+                showEndMark();
+            }
+            loading = false;
+            return;
+        }
+
+        tracks.forEach((t, i) => {
+            const card = renderTrack(t);
+            card.style.animationDelay = (i * 20) + "ms";
+            gridEl.appendChild(card);
+        });
+
+        offset += tracks.length;
+        if (tracks.length < PAGE_SIZE) {
+            exhausted = true;
+            showEndMark();
+        }
+        subEl.textContent = `загружено ${offset}`;
+        setStatus("");
+    } catch (e) {
+        hideLoader();
+        setStatus("Ошибка загрузки: " + e.message, true);
+    }
+    loading = false;
 }
 
-async function loadRecommendations() {
+/* ==== Загрузка поиска ==== */
+async function loadSearch(q) {
+    loading = true;
+    exhausted = true;
+    setStatus("Ищу…");
+    gridEl.innerHTML = "";
+
     try {
-        const tracks = await fetchAudius("/v1/tracks/trending?time=month&limit=18");
-        const grid = document.getElementById("reco-results");
-        grid.innerHTML = "";
-        tracks.forEach(t => grid.appendChild(renderTrack(t)));
-        setStatus("reco-status", "");
+        const tracks = await fetchAudius(
+            `/v1/tracks/search?query=${encodeURIComponent(q)}&limit=40`
+        );
+        if (!tracks.length) {
+            setStatus("Ничего не найдено.");
+            subEl.textContent = "";
+            loading = false;
+            return;
+        }
+        tracks.forEach((t, i) => {
+            const card = renderTrack(t);
+            card.style.animationDelay = (i * 15) + "ms";
+            gridEl.appendChild(card);
+        });
+        subEl.textContent = `найдено ${tracks.length}`;
+        setStatus("");
     } catch (e) {
-        setStatus("reco-status", "Ошибка загрузки рекомендаций: " + e.message, true);
+        setStatus("Ошибка: " + e.message, true);
     }
+    loading = false;
 }
 
-async function search() {
+/* ==== Управление режимом ==== */
+function doSearch() {
     const q = document.getElementById("query").value.trim();
     if (!q) return;
 
-    const section = document.getElementById("search-section");
-    const grid = document.getElementById("search-results");
-
-    section.hidden = false;
-    grid.innerHTML = "";
-    setStatus("search-status", "Ищу...");
-
-    document.getElementById("trending-section").hidden = true;
-    document.getElementById("reco-section").hidden = true;
-
-    try {
-        const tracks = await fetchAudius(`/v1/tracks/search?query=${encodeURIComponent(q)}&limit=30`);
-        if (!tracks.length) {
-            setStatus("search-status", "Ничего не найдено.");
-            return;
-        }
-        setStatus("search-status", `Найдено треков: ${tracks.length}`);
-        tracks.forEach(t => grid.appendChild(renderTrack(t)));
-    } catch (e) {
-        setStatus("search-status", "Ошибка: " + e.message, true);
-    }
+    mode = "search";
+    searchQuery = q;
+    offset = 0;
+    titleEl.textContent = "Поиск";
+    clearBtn.hidden = false;
+    subEl.textContent = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    loadSearch(q);
 }
 
-function clearSearch() {
+function exitSearch() {
     document.getElementById("query").value = "";
-    document.getElementById("search-section").hidden = true;
-    document.getElementById("search-results").innerHTML = "";
-    document.getElementById("trending-section").hidden = false;
-    document.getElementById("reco-section").hidden = false;
+    mode = "trending";
+    searchQuery = "";
+    offset = 0;
+    exhausted = false;
+    titleEl.textContent = "Рекомендации года";
+    clearBtn.hidden = true;
+    subEl.textContent = "";
+    loadTrendingPage();
 }
 
+/* ==== Статус / лоадеры ==== */
+function setStatus(text, isError = false) {
+    statusEl.textContent = text;
+    statusEl.className = "status" + (isError ? " error" : "");
+}
+function showLoader() {
+    if (document.getElementById("loaderEl")) return;
+    const d = document.createElement("div");
+    d.id = "loaderEl";
+    d.className = "loader";
+    d.innerHTML = "<span></span><span></span><span></span>";
+    sentinel.parentNode.insertBefore(d, sentinel);
+}
+function hideLoader() {
+    const el = document.getElementById("loaderEl");
+    if (el) el.remove();
+}
+function showEndMark() {
+    if (document.getElementById("endMark")) return;
+    const d = document.createElement("div");
+    d.id = "endMark";
+    d.className = "end-mark";
+    d.textContent = "— это всё —";
+    gridEl.parentNode.insertBefore(d, sentinel);
+}
+function removeEndMark() {
+    const el = document.getElementById("endMark");
+    if (el) el.remove();
+}
+
+/* ==== Бесконечный скролл ==== */
+const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && mode === "trending" && !loading && !exhausted) {
+        loadTrendingPage();
+    }
+}, { rootMargin: "900px" });
+
+observer.observe(sentinel);
+
+/* ==== Прочее ==== */
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     })[c]);
 }
 
-loadTrending();
-loadRecommendations();
+/* ==== Старт ==== */
+loadTrendingPage();
 </script>
 
 </body>
