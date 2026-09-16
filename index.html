@@ -12,9 +12,6 @@
         --border: rgba(255,255,255,0.07);
         --text: #ffffff;
         --muted: #a1a1aa;
-        --accent: #a855f7;
-        --accent-2: #ec4899;
-        --accent-3: #06b6d4;
     }
     html, body { height: 100%; }
     body {
@@ -26,7 +23,6 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    /* ==== Абстрактный фон ==== */
     .bg {
         position: fixed;
         inset: 0;
@@ -67,6 +63,7 @@
             linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
         background-size: 60px 60px;
         mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
     }
     @keyframes float1 {
         0%,100% { transform: translate(0,0) scale(1); }
@@ -81,7 +78,6 @@
         50%     { transform: translate(60px,-90px) scale(1.2); }
     }
 
-    /* ==== Шапка ==== */
     header {
         position: sticky;
         top: 0;
@@ -156,7 +152,6 @@
     }
     .search-btn svg { width: 16px; height: 16px; }
 
-    /* ==== Main ==== */
     main { padding: 40px 32px 160px; max-width: 1600px; margin: 0 auto; }
 
     .section-head {
@@ -197,7 +192,6 @@
         border-color: rgba(255,255,255,0.2);
     }
 
-    /* ==== Сетка карточек ==== */
     .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -309,7 +303,6 @@
         color: transparent;
     }
 
-    /* Эквалайзер на играющей карточке */
     .eq {
         position: absolute;
         top: 22px;
@@ -321,6 +314,7 @@
         padding: 4px 6px;
         background: rgba(0,0,0,0.55);
         backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         border-radius: 6px;
         z-index: 2;
     }
@@ -340,7 +334,6 @@
         50%      { transform: scaleY(1); }
     }
 
-    /* ==== Статус / загрузка ==== */
     .status {
         color: var(--muted);
         font-size: 14px;
@@ -377,7 +370,6 @@
         text-transform: uppercase;
     }
 
-    /* ==== Плеер ==== */
     .player {
         position: fixed;
         left: 50%;
@@ -447,7 +439,6 @@
         .player-cover { width: 44px; height: 44px; }
     }
 
-    /* скроллбар */
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb {
@@ -503,30 +494,42 @@
 </div>
 
 <script>
-const AUDIUS_HOST = "https://discoveryprovider.audius.co";
+const API_BASE = "https://api.audius.co";
 const APP_NAME = "Flock3Plus";
 const PAGE_SIZE = 24;
 
-const audioEl    = document.getElementById("audio");
-const gridEl     = document.getElementById("grid");
-const statusEl   = document.getElementById("status");
-const titleEl    = document.getElementById("sectionTitle");
-const subEl      = document.getElementById("sectionSub");
-const clearBtn   = document.getElementById("clearBtn");
-const playerCover= document.getElementById("playerCover");
-const playerTitle= document.getElementById("playerTitle");
-const playerArtist=document.getElementById("playerArtist");
-const sentinel   = document.getElementById("sentinel");
+const audioEl     = document.getElementById("audio");
+const gridEl      = document.getElementById("grid");
+const statusEl    = document.getElementById("status");
+const titleEl     = document.getElementById("sectionTitle");
+const subEl       = document.getElementById("sectionSub");
+const clearBtn    = document.getElementById("clearBtn");
+const playerCover = document.getElementById("playerCover");
+const playerTitle = document.getElementById("playerTitle");
+const playerArtist= document.getElementById("playerArtist");
+const sentinel    = document.getElementById("sentinel");
 
-let mode = "trending";     // "trending" | "search"
+let discoveryHost = null;
+let mode = "trending";
 let currentTrackId = null;
 let currentCard = null;
 let offset = 0;
 let loading = false;
 let exhausted = false;
-let searchQuery = "";
 
-/* ==== Плеер ==== */
+async function getDiscoveryHost() {
+    if (discoveryHost) return discoveryHost;
+    const resp = await fetch(`${API_BASE}/v1/tracks/trending?app_name=${APP_NAME}&limit=1`);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    if (data && data.data && data.data.length) {
+        discoveryHost = API_BASE;
+    } else {
+        discoveryHost = API_BASE;
+    }
+    return discoveryHost;
+}
+
 audioEl.addEventListener("ended", () => {
     if (currentCard) currentCard.classList.remove("playing");
     currentCard = null;
@@ -546,7 +549,11 @@ function playTrack(track, card) {
     }
     if (currentCard && currentCard !== card) currentCard.classList.remove("playing");
 
-    audioEl.src = `${AUDIUS_HOST}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
+    const streamUrl = track.streamEndpoint
+        ? `${API_BASE}${track.streamEndpoint}`
+        : `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
+
+    audioEl.src = streamUrl;
     audioEl.play().catch(e => console.error("play error:", e));
 
     currentTrackId = track.id;
@@ -564,7 +571,6 @@ function playTrack(track, card) {
     playerArtist.textContent = track.user?.name || "Unknown";
 }
 
-/* ==== Рендер карточки ==== */
 function renderTrack(track) {
     const cover = track.artwork?.["480x480"] || track.artwork?.["150x150"] || "";
     const title = track.title || "Без названия";
@@ -591,16 +597,18 @@ function renderTrack(track) {
     return card;
 }
 
-/* ==== API ==== */
 async function fetchAudius(path) {
-    const url = `${AUDIUS_HOST}${path}${path.includes("?") ? "&" : "?"}app_name=${APP_NAME}`;
+    await getDiscoveryHost();
+    const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}app_name=${APP_NAME}`;
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(`HTTP ${resp.status} ${text}`.trim());
+    }
     const data = await resp.json();
     return data.data || [];
 }
 
-/* ==== Загрузка трендов (бесконечный скролл) ==== */
 async function loadTrendingPage() {
     if (loading || exhausted) return;
     loading = true;
@@ -608,6 +616,7 @@ async function loadTrendingPage() {
     if (offset === 0) {
         setStatus("Загрузка…");
         gridEl.innerHTML = "";
+        removeEndMark();
     } else {
         setStatus("");
         showLoader();
@@ -615,7 +624,7 @@ async function loadTrendingPage() {
 
     try {
         const tracks = await fetchAudius(
-            `/v1/tracks/trending?time=year&limit=${PAGE_SIZE}&offset=${offset}`
+            `/v1/tracks/trending?time=week&limit=${PAGE_SIZE}`
         );
 
         hideLoader();
@@ -651,12 +660,12 @@ async function loadTrendingPage() {
     loading = false;
 }
 
-/* ==== Загрузка поиска ==== */
 async function loadSearch(q) {
     loading = true;
     exhausted = true;
     setStatus("Ищу…");
     gridEl.innerHTML = "";
+    removeEndMark();
 
     try {
         const tracks = await fetchAudius(
@@ -681,13 +690,11 @@ async function loadSearch(q) {
     loading = false;
 }
 
-/* ==== Управление режимом ==== */
 function doSearch() {
     const q = document.getElementById("query").value.trim();
     if (!q) return;
 
     mode = "search";
-    searchQuery = q;
     offset = 0;
     titleEl.textContent = "Поиск";
     clearBtn.hidden = false;
@@ -699,16 +706,15 @@ function doSearch() {
 function exitSearch() {
     document.getElementById("query").value = "";
     mode = "trending";
-    searchQuery = "";
     offset = 0;
     exhausted = false;
     titleEl.textContent = "Рекомендации года";
     clearBtn.hidden = true;
     subEl.textContent = "";
+    removeEndMark();
     loadTrendingPage();
 }
 
-/* ==== Статус / лоадеры ==== */
 function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.className = "status" + (isError ? " error" : "");
@@ -738,7 +744,6 @@ function removeEndMark() {
     if (el) el.remove();
 }
 
-/* ==== Бесконечный скролл ==== */
 const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && mode === "trending" && !loading && !exhausted) {
         loadTrendingPage();
@@ -747,14 +752,12 @@ const observer = new IntersectionObserver((entries) => {
 
 observer.observe(sentinel);
 
-/* ==== Прочее ==== */
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     })[c]);
 }
 
-/* ==== Старт ==== */
 loadTrendingPage();
 </script>
 
