@@ -474,7 +474,7 @@
 
 <main>
     <div class="section-head">
-        <div class="section-title" id="sectionTitle">Рекомендации года</div>
+        <div class="section-title" id="sectionTitle">Рекомендации за всё время</div>
         <div class="section-sub" id="sectionSub"></div>
         <button class="clear-btn" id="clearBtn" hidden onclick="exitSearch()">← Назад</button>
     </div>
@@ -496,7 +496,7 @@
 <script>
 const API_BASE = "https://api.audius.co";
 const APP_NAME = "Flock3Plus";
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 30;
 
 const audioEl     = document.getElementById("audio");
 const gridEl      = document.getElementById("grid");
@@ -509,7 +509,6 @@ const playerTitle = document.getElementById("playerTitle");
 const playerArtist= document.getElementById("playerArtist");
 const sentinel    = document.getElementById("sentinel");
 
-let discoveryHost = null;
 let mode = "trending";
 let currentTrackId = null;
 let currentCard = null;
@@ -517,18 +516,14 @@ let offset = 0;
 let loading = false;
 let exhausted = false;
 
-async function getDiscoveryHost() {
-    if (discoveryHost) return discoveryHost;
-    const resp = await fetch(`${API_BASE}/v1/tracks/trending?app_name=${APP_NAME}&limit=1`);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const data = await resp.json();
-    if (data && data.data && data.data.length) {
-        discoveryHost = API_BASE;
-    } else {
-        discoveryHost = API_BASE;
-    }
-    return discoveryHost;
-}
+const seenIds = new Set();
+const genrePool = [
+    "Electronic", "Hip-Hop/Rap", "Rock", "Pop", "House", "Techno",
+    "Dubstep", "Trap", "R&B/Soul", "Lo-Fi", "Ambient", "Drum & Bass",
+    "Trance", "Jazz", "Classical", "Reggae", "Country", "Folk",
+    "Latin", "Metal", "Punk", "Funk", "Disco", "Soundtrack"
+];
+const timeWindows = ["allTime", "month", "week"];
 
 audioEl.addEventListener("ended", () => {
     if (currentCard) currentCard.classList.remove("playing");
@@ -549,11 +544,7 @@ function playTrack(track, card) {
     }
     if (currentCard && currentCard !== card) currentCard.classList.remove("playing");
 
-    const streamUrl = track.streamEndpoint
-        ? `${API_BASE}${track.streamEndpoint}`
-        : `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
-
-    audioEl.src = streamUrl;
+    audioEl.src = `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
     audioEl.play().catch(e => console.error("play error:", e));
 
     currentTrackId = track.id;
@@ -598,15 +589,15 @@ function renderTrack(track) {
 }
 
 async function fetchAudius(path) {
-    await getDiscoveryHost();
     const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}app_name=${APP_NAME}`;
     const resp = await fetch(url);
-    if (!resp.ok) {
-        const text = await resp.text().catch(() => "");
-        throw new Error(`HTTP ${resp.status} ${text}`.trim());
-    }
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
     return data.data || [];
+}
+
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 async function loadTrendingPage() {
@@ -617,19 +608,53 @@ async function loadTrendingPage() {
         setStatus("Загрузка…");
         gridEl.innerHTML = "";
         removeEndMark();
+        seenIds.clear();
     } else {
         setStatus("");
         showLoader();
     }
 
     try {
-        const tracks = await fetchAudius(
-            `/v1/tracks/trending?time=week&limit=${PAGE_SIZE}`
-        );
+        let added = 0;
+        let attempts = 0;
+
+        while (added < PAGE_SIZE && attempts < 6) {
+            attempts++;
+
+            const time = attempts === 1 ? "allTime" : pick(timeWindows);
+            const genre = attempts === 1
+                ? ""
+                : (attempts % 2 === 0 ? pick(genrePool) : "");
+
+            const genrePart = genre ? `&genre=${encodeURIComponent(genre)}` : "";
+            const path = `/v1/tracks/trending?time=${time}&limit=${PAGE_SIZE}${genrePart}`;
+
+            let tracks;
+            try {
+                tracks = await fetchAudius(path);
+            } catch (e) {
+                if (attempts >= 6) throw e;
+                continue;
+            }
+
+            if (!tracks.length) continue;
+
+            const shuffled = tracks.slice().sort(() => Math.random() - 0.5);
+
+            for (const t of shuffled) {
+                if (seenIds.has(t.id)) continue;
+                seenIds.add(t.id);
+                const card = renderTrack(t);
+                card.style.animationDelay = (added * 15) + "ms";
+                gridEl.appendChild(card);
+                added++;
+                if (added >= PAGE_SIZE) break;
+            }
+        }
 
         hideLoader();
 
-        if (!tracks.length) {
+        if (added === 0) {
             exhausted = true;
             if (offset === 0) {
                 setStatus("Пока нет треков.");
@@ -640,17 +665,7 @@ async function loadTrendingPage() {
             return;
         }
 
-        tracks.forEach((t, i) => {
-            const card = renderTrack(t);
-            card.style.animationDelay = (i * 20) + "ms";
-            gridEl.appendChild(card);
-        });
-
-        offset += tracks.length;
-        if (tracks.length < PAGE_SIZE) {
-            exhausted = true;
-            showEndMark();
-        }
+        offset += added;
         subEl.textContent = `загружено ${offset}`;
         setStatus("");
     } catch (e) {
@@ -666,10 +681,11 @@ async function loadSearch(q) {
     setStatus("Ищу…");
     gridEl.innerHTML = "";
     removeEndMark();
+    seenIds.clear();
 
     try {
         const tracks = await fetchAudius(
-            `/v1/tracks/search?query=${encodeURIComponent(q)}&limit=40`
+            `/v1/tracks/search?query=${encodeURIComponent(q)}&limit=60`
         );
         if (!tracks.length) {
             setStatus("Ничего не найдено.");
@@ -678,6 +694,8 @@ async function loadSearch(q) {
             return;
         }
         tracks.forEach((t, i) => {
+            if (seenIds.has(t.id)) return;
+            seenIds.add(t.id);
             const card = renderTrack(t);
             card.style.animationDelay = (i * 15) + "ms";
             gridEl.appendChild(card);
@@ -708,7 +726,7 @@ function exitSearch() {
     mode = "trending";
     offset = 0;
     exhausted = false;
-    titleEl.textContent = "Рекомендации года";
+    titleEl.textContent = "Рекомендации за всё время";
     clearBtn.hidden = true;
     subEl.textContent = "";
     removeEndMark();
