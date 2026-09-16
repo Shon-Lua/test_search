@@ -247,13 +247,13 @@
     </section>
 
     <section id="trending-section">
-        <h2>🔥 В тренде</h2>
+        <h2>🔥 В тренде за неделю</h2>
         <div id="trending-status" class="status">Загрузка...</div>
         <div class="grid" id="trending-results"></div>
     </section>
 
     <section id="reco-section">
-        <h2>✨ Рекомендации для вас</h2>
+        <h2>✨ Рекомендации</h2>
         <div id="reco-status" class="status">Загрузка...</div>
         <div class="grid" id="reco-results"></div>
     </section>
@@ -362,7 +362,7 @@ async function fetchAudius(path) {
 
 async function loadTrending() {
     try {
-        const tracks = await fetchAudius("/v1/tracks/trending?limit=18");
+        const tracks = await fetchAudius("/v1/tracks/trending?time=week&limit=18");
         const grid = document.getElementById("trending-results");
         grid.innerHTML = "";
         tracks.forEach(t => grid.appendChild(renderTrack(t)));
@@ -373,14 +373,12 @@ async function loadTrending() {
 }
 
 async function loadRecommendations() {
-    const genres = ["Electronic", "Hip-Hop/Rap", "Rock", "Pop", "House", "Techno", "Dubstep", "Trap", "R&B/Soul", "Lo-Fi"];
-    const genre = genres[Math.floor(Math.random() * genres.length)];
     try {
-        const tracks = await fetchAudius(`/v1/tracks/trending?genre=${encodeURIComponent(genre)}&limit=18`);
+        const tracks = await fetchAudius("/v1/tracks/trending?time=month&limit=18");
         const grid = document.getElementById("reco-results");
         grid.innerHTML = "";
         tracks.forEach(t => grid.appendChild(renderTrack(t)));
-        setStatus("reco-status", `Жанр: ${genre}`);
+        setStatus("reco-status", "");
     } catch (e) {
         setStatus("reco-status", "Ошибка загрузки рекомендаций: " + e.message, true);
     }
