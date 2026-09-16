@@ -93,11 +93,6 @@
         color: transparent;
         white-space: nowrap;
     }
-    .logo::after {
-        content: ".";
-        color: #ec4899;
-        -webkit-text-fill-color: #ec4899;
-    }
     .search-wrap {
         flex: 1;
         max-width: 560px;
@@ -359,7 +354,6 @@
         text-transform: uppercase;
     }
 
-    /* ==== Кастомный плеер ==== */
     .player {
         position: fixed;
         left: 50%;
@@ -562,7 +556,7 @@
 </div>
 
 <header>
-    <div class="logo">sonic</div>
+    <div class="logo">Flock3+ [Demo]</div>
     <div class="search-wrap">
         <input id="query" placeholder="Что послушаем? Трек или исполнитель…"
                onkeydown="if(event.key==='Enter') doSearch()">
@@ -928,8 +922,6 @@ function removeEndMark() {
     const el = document.getElementById("endMark");
     if (el) el.remove();
 }
-
-/* ==== Управление плеером ==== */
 
 playBtn.addEventListener("click", () => {
     if (!audioEl.src) return;
