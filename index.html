@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Music</title>
+<title>Flock3+ [Demo]</title>
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -263,6 +263,45 @@
     }
     .play-overlay:hover { transform: scale(1.1) !important; }
 
+    .download-overlay {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: translateY(-6px);
+        transition: all 0.25s;
+        z-index: 3;
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+    .download-overlay svg { width: 16px; height: 16px; }
+    .card:hover .download-overlay {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .download-overlay:hover {
+        background: rgba(0,0,0,0.85);
+        transform: scale(1.08) !important;
+    }
+    .download-overlay.downloading svg {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     .title {
         font-size: 14px;
         font-weight: 600;
@@ -492,6 +531,8 @@
     }
     .play-btn svg { width: 20px; height: 20px; }
 
+    .dl-btn.downloading svg { animation: spin 1s linear infinite; }
+
     .volume-wrap {
         display: flex;
         align-items: center;
@@ -525,6 +566,34 @@
         align-items: center;
     }
     .vol-btn svg { width: 18px; height: 18px; }
+
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 120px;
+        transform: translateX(-50%) translateY(20px);
+        background: rgba(20,20,26,0.95);
+        border: 1px solid rgba(168,85,247,0.4);
+        color: #fff;
+        font-size: 13px;
+        padding: 12px 20px;
+        border-radius: 999px;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s, transform 0.3s;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        max-width: 90vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 
     @media (max-width: 720px) {
         header { padding: 12px 16px; gap: 12px; }
@@ -610,6 +679,14 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
         </button>
 
+        <button class="ctrl-btn small dl-btn" id="downloadBtn" title="Скачать трек">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v12"></path>
+                <path d="M6 12l6 6 6-6"></path>
+                <path d="M5 20h14"></path>
+            </svg>
+        </button>
+
         <div class="volume-wrap">
             <button class="vol-btn" id="volBtn">
                 <svg id="volIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
@@ -621,6 +698,7 @@
     </div>
 </div>
 
+<div class="toast" id="toast"></div>
 <audio id="audio" preload="none"></audio>
 
 <script>
@@ -634,6 +712,7 @@ const statusEl    = document.getElementById("status");
 const titleEl     = document.getElementById("sectionTitle");
 const clearBtn    = document.getElementById("clearBtn");
 const sentinel    = document.getElementById("sentinel");
+const toastEl     = document.getElementById("toast");
 
 const playerEl    = document.getElementById("player");
 const playerCover = document.getElementById("playerCover");
@@ -644,6 +723,7 @@ const playIcon    = document.getElementById("playIcon");
 const pauseIcon   = document.getElementById("pauseIcon");
 const prevBtn     = document.getElementById("prevBtn");
 const nextBtn     = document.getElementById("nextBtn");
+const downloadBtn = document.getElementById("downloadBtn");
 const timeCurrent = document.getElementById("timeCurrent");
 const timeTotal   = document.getElementById("timeTotal");
 const progressBar = document.getElementById("progressBar");
@@ -686,6 +766,70 @@ function setStatus(text, isError = false) {
     statusEl.className = "status" + (isError ? " error" : "");
 }
 
+let toastTimer = null;
+function showToast(text, ms = 2600) {
+    toastEl.textContent = text;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), ms);
+}
+
+function sanitizeFilename(name) {
+    return String(name)
+        .replace(/[\\/:*?"<>|]+/g, "_")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 150) || "track";
+}
+
+function guessExt(blob) {
+    const t = (blob && blob.type) || "";
+    if (t.includes("mpeg") || t.includes("mp3")) return "mp3";
+    if (t.includes("ogg")) return "ogg";
+    if (t.includes("wav")) return "wav";
+    if (t.includes("flac")) return "flac";
+    if (t.includes("mp4") || t.includes("m4a") || t.includes("aac")) return "m4a";
+    return "mp3";
+}
+
+async function downloadTrack(track, btn) {
+    if (!track) return;
+    const url = `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
+
+    if (btn) {
+        btn.classList.add("downloading");
+        btn.disabled = true;
+    }
+    showToast(`Скачиваю «${track.title || "трек"}»…`, 60000);
+
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        const blob = await resp.blob();
+        const ext = guessExt(blob);
+        const filename = `${sanitizeFilename(track.user?.name || "Unknown")} - ${sanitizeFilename(track.title || "track")}.${ext}`;
+
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+
+        showToast(`Готово: ${filename}`);
+    } catch (e) {
+        showToast("Не удалось скачать: " + e.message);
+    } finally {
+        if (btn) {
+            btn.classList.remove("downloading");
+            btn.disabled = false;
+        }
+    }
+}
+
 function updatePlayingCard() {
     document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
     if (currentTrackId) {
@@ -715,7 +859,7 @@ function loadTrack(index, autoplay = true) {
     }
 }
 
-function playTrack(track, card) {
+function playTrack(track) {
     const idx = loadedTracks.findIndex(t => t.id === track.id);
     if (idx === -1) return;
 
@@ -758,6 +902,13 @@ function renderTrack(track) {
         <div class="cover-wrap">
             ${cover ? `<img src="${cover}" alt="" loading="lazy">` : ""}
             <div class="eq"><span></span><span></span><span></span><span></span></div>
+            <button class="download-overlay" aria-label="Скачать" title="Скачать">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 4v12"></path>
+                    <path d="M6 12l6 6 6-6"></path>
+                    <path d="M5 20h14"></path>
+                </svg>
+            </button>
             <button class="play-overlay" aria-label="Play">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
             </button>
@@ -766,7 +917,14 @@ function renderTrack(track) {
         <div class="artist">${escapeHtml(artist)}</div>
     `;
 
-    card.addEventListener("click", () => playTrack(track, card));
+    card.addEventListener("click", () => playTrack(track));
+
+    const dlBtn = card.querySelector(".download-overlay");
+    dlBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        downloadTrack(track, dlBtn);
+    });
+
     if (currentTrackId === track.id) card.classList.add("playing");
     return card;
 }
@@ -931,6 +1089,11 @@ playBtn.addEventListener("click", () => {
 
 nextBtn.addEventListener("click", playNext);
 prevBtn.addEventListener("click", playPrev);
+
+downloadBtn.addEventListener("click", () => {
+    if (currentIndex < 0) return;
+    downloadTrack(loadedTracks[currentIndex], downloadBtn);
+});
 
 audioEl.addEventListener("play", () => {
     playIcon.style.display = "none";
