@@ -29,13 +29,14 @@
             font-family: Arial, sans-serif;
         }
 
-        button,
-        input {
+        button {
             font: inherit;
+            cursor: pointer;
         }
 
-        button {
-            cursor: pointer;
+        button:disabled {
+            opacity: 0.35;
+            cursor: default;
         }
 
         .header {
@@ -85,6 +86,8 @@
             margin: 0;
             color: var(--muted);
             font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
         }
 
         .button {
@@ -95,7 +98,7 @@
             color: var(--text);
         }
 
-        .button:hover {
+        .button:hover:not(:disabled) {
             background: var(--panel-hover);
         }
 
@@ -120,6 +123,7 @@
         }
 
         .cover {
+            display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -164,6 +168,7 @@
         }
 
         .details-cover {
+            display: block;
             width: 100%;
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -238,6 +243,7 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            min-height: 100px;
         }
 
         .reader-image {
@@ -246,6 +252,7 @@
             height: auto;
             background: white;
             border-radius: 3px;
+            content-visibility: auto;
         }
 
         .reader-info {
@@ -259,11 +266,13 @@
 
         .reader-info a {
             color: var(--accent);
+            overflow-wrap: anywhere;
         }
 
         .reader-navigation {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 12px;
             margin: 20px 0;
         }
@@ -277,6 +286,22 @@
 
         .message.error {
             color: var(--error);
+        }
+
+        .loader {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto 14px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .debug {
@@ -327,6 +352,10 @@
             .details h1 {
                 font-size: 22px;
             }
+
+            .reader-image {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -352,17 +381,12 @@
         </section>
 
         <section class="screen" id="detailsScreen">
-            <button class="button back-button" id="backToCatalog">
-                ← Каталог
-            </button>
-
+            <button class="button back-button" id="backToCatalog">← Каталог</button>
             <div id="detailsContent"></div>
         </section>
 
         <section class="screen" id="readerScreen">
-            <button class="button back-button" id="backToDetails">
-                ← К главам
-            </button>
+            <button class="button back-button" id="backToDetails">← К главам</button>
 
             <div class="reader-toolbar">
                 <div>
@@ -370,9 +394,7 @@
                     <p class="subtitle" id="pageCounter"></p>
                 </div>
 
-                <button class="button" id="openOriginalButton">
-                    Открыть изображение
-                </button>
+                <button class="button" id="openOriginalButton">Открыть изображение</button>
             </div>
 
             <div class="reader-navigation">
@@ -382,7 +404,7 @@
 
             <div class="reader-image-wrap">
                 <div id="readerMessage" class="message hidden"></div>
-                <img id="readerImage" class="reader-image hidden" alt="Страница манги">
+                <img id="readerImage" class="reader-image hidden" alt="Страница манги" decoding="async">
 
                 <div id="imageInfo" class="reader-info hidden">
                     <strong>Прямая ссылка на изображение</strong>
@@ -407,8 +429,13 @@
             chapters: [],
             pages: [],
             currentPage: 0,
-            lastJson: null
+            chapterIndex: 0,
+            chapterCache: new Map(),
+            lastJson: null,
+            readerSession: 0
         };
+
+        const preloadedImages = new Map();
 
         const $ = id => document.getElementById(id);
 
@@ -422,25 +449,28 @@
             });
 
             $(id).classList.add("active");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: "auto" });
         }
 
-        function showMessage(container, text, isError = false) {
+        function showMessage(container, text, isError = false, loading = false) {
             container.innerHTML = "";
+            container.className = "message" + (isError ? " error" : "");
 
-            const div = document.createElement("div");
-            div.className = "message" + (isError ? " error" : "");
-            div.textContent = text;
+            if (loading) {
+                const loader = document.createElement("div");
+                loader.className = "loader";
+                container.appendChild(loader);
+            }
 
-            container.appendChild(div);
+            const message = document.createElement("div");
+            message.textContent = text;
+            container.appendChild(message);
         }
 
         function setDebug(json) {
             state.lastJson = json;
             $("debugOutput").textContent =
-                typeof json === "string"
-                    ? json
-                    : JSON.stringify(json, null, 2);
+                typeof json === "string" ? json : JSON.stringify(json, null, 2);
         }
 
         function makeApiUrl(action, params = {}) {
@@ -457,10 +487,11 @@
         async function apiRequest(action, params = {}) {
             const url = makeApiUrl(action, params);
 
-            console.log("[API] Request:", url);
+            console.log("[API]", action, url);
 
             const response = await fetch(url, {
-                method: "GET"
+                method: "GET",
+                cache: "default"
             });
 
             if (!response.ok) {
@@ -475,7 +506,7 @@
                 json = JSON.parse(text);
             } catch {
                 setDebug(text);
-                throw new Error("Сервер вернул не JSON. Смотри отладку внизу страницы.");
+                throw new Error("Сервер вернул не JSON.");
             }
 
             setDebug(json);
@@ -570,7 +601,9 @@
                 page.image ||
                 page.src ||
                 page.imageUrl ||
+                page.imageURL ||
                 page.image_url ||
+                page.fileUrl ||
                 page.file ||
                 page.path ||
                 ""
@@ -581,8 +614,8 @@
             const catalog = $("catalog");
 
             catalog.innerHTML = "";
-            showMessage(catalog, "Загружаем каталог...");
-
+            showMessage(catalog, "Загружаем каталог...", false, true);
+            $("refreshButton").disabled = true;
             setStatus("Загрузка каталога");
 
             try {
@@ -596,15 +629,13 @@
                 catalog.innerHTML = "";
 
                 if (results.length === 0) {
-                    showMessage(
-                        catalog,
-                        "API ответил, но список произведений не найден. Открой отладку JSON."
-                    );
-
+                    showMessage(catalog, "Список произведений не найден.");
                     return;
                 }
 
-                for (const manga of results) {
+                const fragment = document.createDocumentFragment();
+
+                results.forEach((manga, index) => {
                     const card = document.createElement("article");
                     card.className = "card";
 
@@ -613,8 +644,14 @@
 
                     const cover = document.createElement("img");
                     cover.className = "cover";
-                    cover.loading = "lazy";
                     cover.alt = manga.name || "Обложка манги";
+                    cover.decoding = "async";
+                    cover.loading = index < 8 ? "eager" : "lazy";
+
+                    if (index < 4) {
+                        cover.fetchPriority = "high";
+                    }
+
                     cover.src = getCoverUrl(manga);
 
                     cover.onerror = () => {
@@ -638,9 +675,10 @@
                         openManga(manga);
                     });
 
-                    catalog.appendChild(card);
-                }
+                    fragment.appendChild(card);
+                });
 
+                catalog.appendChild(fragment);
                 setStatus("Загружено: " + results.length);
             } catch (error) {
                 console.error(error);
@@ -649,11 +687,13 @@
                 showMessage(
                     catalog,
                     "Не удалось загрузить каталог: " + error.message +
-                    ". Если браузер сообщает Failed to fetch, проверь CORS и доступность API.",
+                    ". При ошибке Failed to fetch проверь CORS и доступность API.",
                     true
                 );
 
                 setStatus("Ошибка API");
+            } finally {
+                $("refreshButton").disabled = false;
             }
         }
 
@@ -667,16 +707,17 @@
             const container = $("detailsContent");
             container.innerHTML = "";
 
-            showMessage(container, "Загружаем информацию о манге...");
+            showMessage(container, "Загружаем информацию о манге...", false, true);
 
             const id = getMangaId(manga);
-
             const details = document.createElement("div");
             details.className = "details";
 
             const cover = document.createElement("img");
             cover.className = "details-cover";
             cover.alt = "Обложка манги";
+            cover.loading = "eager";
+            cover.decoding = "async";
             cover.src = getCoverUrl(manga);
 
             const info = document.createElement("div");
@@ -711,21 +752,19 @@
 
             const list = document.createElement("div");
             list.className = "chapter-list";
-            list.id = "chapterList";
 
             container.innerHTML = "";
             container.append(details, heading, list);
 
             if (!id) {
-                showMessage(list, "У этого произведения не найден ID.", true);
+                showMessage(list, "У произведения не найден идентификатор.", true);
                 return;
             }
 
-            showMessage(list, "Загружаем список глав...");
+            showMessage(list, "Загружаем список глав...", false, true);
 
             try {
                 const json = await apiRequest("chapters", { id });
-
                 const chapters = normalizeArray(json, [
                     "chapters",
                     "results",
@@ -736,13 +775,11 @@
                 list.innerHTML = "";
 
                 if (chapters.length === 0) {
-                    showMessage(
-                        list,
-                        "Список глав пуст или имеет другую структуру. Посмотри JSON в отладке.",
-                        true
-                    );
+                    showMessage(list, "Главы не найдены.", true);
                     return;
                 }
+
+                const fragment = document.createDocumentFragment();
 
                 chapters.forEach((chapter, index) => {
                     const button = document.createElement("button");
@@ -761,97 +798,144 @@
                         openChapter(chapter, index);
                     });
 
-                    list.appendChild(button);
+                    fragment.appendChild(button);
                 });
+
+                list.appendChild(fragment);
             } catch (error) {
                 console.error(error);
-
-                showMessage(
-                    list,
-                    "Не удалось получить главы: " + error.message,
-                    true
-                );
+                showMessage(list, "Не удалось получить главы: " + error.message, true);
             }
+        }
+
+        function preloadImage(index) {
+            if (index < 0 || index >= state.pages.length) {
+                return;
+            }
+
+            const page = state.pages[index];
+
+            if (!page || !page.url || preloadedImages.has(page.url)) {
+                return;
+            }
+
+            const img = new Image();
+            img.decoding = "async";
+            img.loading = "eager";
+            img.fetchPriority = index <= state.currentPage + 1 ? "high" : "low";
+
+            preloadedImages.set(page.url, img);
+            img.src = page.url;
+
+            img.decode().catch(() => {});
+
+            while (preloadedImages.size > 6) {
+                const oldestUrl = preloadedImages.keys().next().value;
+                preloadedImages.delete(oldestUrl);
+            }
+        }
+
+        function preloadNearbyPages() {
+            preloadImage(state.currentPage + 1);
+            preloadImage(state.currentPage + 2);
         }
 
         async function openChapter(chapter, index) {
             const chapterId = getChapterId(chapter);
 
             if (!chapterId) {
-                alert(
-                    "В ответе API не найден chapterId. Открой отладку JSON, " +
-                    "чтобы увидеть реальные поля главы."
-                );
+                alert("В ответе API не найден chapterId. Проверь JSON внизу страницы.");
                 return;
             }
 
+            state.chapterIndex = index;
+            state.currentPage = 0;
+
             showScreen("readerScreen");
 
-            $("readerTitle").textContent =
-                getChapterTitle(chapter, index);
-
+            $("readerTitle").textContent = getChapterTitle(chapter, index);
             $("readerImage").classList.add("hidden");
             $("imageInfo").classList.add("hidden");
-
             $("readerMessage").classList.remove("hidden");
-            showMessage($("readerMessage"), "Получаем страницы главы...");
+
+            showMessage($("readerMessage"), "Получаем страницы главы...", false, true);
+
+            const session = ++state.readerSession;
 
             try {
-                const json = await apiRequest("pages", {
-                    id: chapterId
-                });
+                let pages;
 
-                const pages = normalizeArray(json, [
-                    "pages",
-                    "results",
-                    "data"
-                ]);
+                if (state.chapterCache.has(chapterId)) {
+                    pages = state.chapterCache.get(chapterId);
+                } else {
+                    const json = await apiRequest("pages", { id: chapterId });
 
-                state.pages = pages
-                    .map(page => ({
-                        original: page,
-                        url: getPageUrl(page)
-                    }))
-                    .filter(page => page.url);
+                    pages = normalizeArray(json, [
+                        "pages",
+                        "results",
+                        "data"
+                    ])
+                        .map(page => ({
+                            original: page,
+                            url: getPageUrl(page)
+                        }))
+                        .filter(page => page.url);
+
+                    state.chapterCache.set(chapterId, pages);
+                }
+
+                if (session !== state.readerSession) {
+                    return;
+                }
+
+                state.pages = pages;
 
                 if (state.pages.length === 0) {
                     showMessage(
                         $("readerMessage"),
-                        "Страницы не найдены или структура ответа отличается. " +
-                        "Посмотри JSON в блоке отладки.",
+                        "Страницы не найдены. Проверь структуру ответа в отладке.",
                         true
                     );
-
                     return;
                 }
 
-                state.currentPage = 0;
+                preloadImage(0);
+                preloadImage(1);
+                preloadImage(2);
+
                 displayPage();
             } catch (error) {
                 console.error(error);
 
-                showMessage(
-                    $("readerMessage"),
-                    "Не удалось загрузить страницы: " + error.message,
-                    true
-                );
+                if (session === state.readerSession) {
+                    showMessage(
+                        $("readerMessage"),
+                        "Не удалось загрузить страницы: " + error.message,
+                        true
+                    );
+                }
             }
         }
 
         function displayPage() {
-            const page = state.pages[state.currentPage];
+            const pageIndex = state.currentPage;
+            const page = state.pages[pageIndex];
 
             if (!page) {
                 return;
             }
 
             const image = $("readerImage");
+            const readerMessage = $("readerMessage");
 
-            $("readerMessage").classList.add("hidden");
+            image.classList.add("hidden");
             $("imageInfo").classList.remove("hidden");
 
+            showMessage(readerMessage, "Загружаем страницу...", false, true);
+            readerMessage.classList.remove("hidden");
+
             $("pageCounter").textContent =
-                "Страница " + (state.currentPage + 1) +
+                "Страница " + (pageIndex + 1) +
                 " из " + state.pages.length;
 
             $("directImageLink").href = page.url;
@@ -862,27 +946,40 @@
             };
 
             image.onload = () => {
+                if (state.currentPage !== pageIndex) {
+                    return;
+                }
+
                 image.classList.remove("hidden");
+                readerMessage.classList.add("hidden");
+                preloadNearbyPages();
             };
 
             image.onerror = () => {
+                if (state.currentPage !== pageIndex) {
+                    return;
+                }
+
                 image.classList.add("hidden");
 
                 showMessage(
-                    $("readerMessage"),
-                    "Не удалось загрузить изображение по прямой ссылке. " +
-                    "Попробуй открыть URL отдельно.",
+                    readerMessage,
+                    "Не удалось загрузить изображение. Попробуй открыть прямую ссылку отдельно.",
                     true
                 );
 
-                $("readerMessage").classList.remove("hidden");
+                readerMessage.classList.remove("hidden");
             };
 
+            image.decoding = "async";
+            image.fetchPriority = "high";
+            image.loading = "eager";
             image.src = page.url;
 
-            $("previousPage").disabled = state.currentPage === 0;
-            $("nextPage").disabled =
-                state.currentPage >= state.pages.length - 1;
+            $("previousPage").disabled = pageIndex === 0;
+            $("nextPage").disabled = pageIndex >= state.pages.length - 1;
+
+            preloadNearbyPages();
         }
 
         $("refreshButton").addEventListener("click", loadLatest);
@@ -892,6 +989,7 @@
         });
 
         $("backToDetails").addEventListener("click", () => {
+            state.readerSession++;
             showScreen("detailsScreen");
         });
 
@@ -917,6 +1015,22 @@
                 $("copyImageLink").textContent = "Скопировано!";
             } catch {
                 prompt("Скопируй прямую ссылку:", url);
+            }
+        });
+
+        document.addEventListener("keydown", event => {
+            if (!$("readerScreen").classList.contains("active")) {
+                return;
+            }
+
+            if (event.key === "ArrowRight" && state.currentPage < state.pages.length - 1) {
+                state.currentPage++;
+                displayPage();
+            }
+
+            if (event.key === "ArrowLeft" && state.currentPage > 0) {
+                state.currentPage--;
+                displayPage();
             }
         });
 
