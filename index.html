@@ -1,1197 +1,926 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Flock3+ [Demo]</title>
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-        --bg: #08080c;
-        --card: rgba(255,255,255,0.035);
-        --card-hover: rgba(255,255,255,0.07);
-        --border: rgba(255,255,255,0.07);
-        --text: #ffffff;
-        --muted: #a1a1aa;
-        --accent-1: #a855f7;
-        --accent-2: #ec4899;
-    }
-    html, body { height: 100%; }
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-        overflow-x: hidden;
-        -webkit-font-smoothing: antialiased;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lib Club Manga</title>
 
-    .bg {
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        overflow: hidden;
-        pointer-events: none;
-    }
-    .blob {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(120px);
-        opacity: 0.55;
-        will-change: transform;
-    }
-    .blob.b1 {
-        width: 520px; height: 520px;
-        background: #7c3aed;
-        top: -180px; left: -120px;
-        animation: float1 22s ease-in-out infinite;
-    }
-    .blob.b2 {
-        width: 460px; height: 460px;
-        background: #ec4899;
-        top: 30%; right: -160px;
-        animation: float2 26s ease-in-out infinite;
-    }
-    .blob.b3 {
-        width: 400px; height: 400px;
-        background: #06b6d4;
-        bottom: -160px; left: 30%;
-        animation: float3 30s ease-in-out infinite;
-    }
-    @keyframes float1 {
-        0%,100% { transform: translate(0,0) scale(1); }
-        50%     { transform: translate(80px,60px) scale(1.15); }
-    }
-    @keyframes float2 {
-        0%,100% { transform: translate(0,0) scale(1); }
-        50%     { transform: translate(-100px,80px) scale(1.1); }
-    }
-    @keyframes float3 {
-        0%,100% { transform: translate(0,0) scale(1); }
-        50%     { transform: translate(60px,-90px) scale(1.2); }
-    }
-
-    header {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        padding: 18px 32px;
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        background: rgba(8,8,12,0.55);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .logo {
-        font-weight: 800;
-        font-size: 20px;
-        letter-spacing: -0.6px;
-        background: linear-gradient(135deg, #a855f7, #ec4899 50%, #06b6d4);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        white-space: nowrap;
-    }
-    .search-wrap {
-        flex: 1;
-        max-width: 560px;
-        position: relative;
-    }
-    input {
-        width: 100%;
-        padding: 13px 50px 13px 20px;
-        font-size: 14px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: rgba(255,255,255,0.04);
-        color: #fff;
-        outline: none;
-        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-        font-family: inherit;
-    }
-    input::placeholder { color: #71717a; }
-    input:focus {
-        border-color: rgba(168,85,247,0.6);
-        background: rgba(255,255,255,0.06);
-        box-shadow: 0 0 0 4px rgba(168,85,247,0.12);
-    }
-    .search-btn {
-        position: absolute;
-        right: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: none;
-        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .search-btn:hover {
-        transform: translateY(-50%) scale(1.08);
-        box-shadow: 0 0 20px rgba(236,72,153,0.5);
-    }
-    .search-btn svg { width: 16px; height: 16px; }
-
-    main { padding: 40px 32px 200px; max-width: 1600px; margin: 0 auto; }
-
-    .section-head {
-        display: flex;
-        align-items: baseline;
-        gap: 16px;
-        margin-bottom: 28px;
-    }
-    .section-title {
-        font-size: 34px;
-        font-weight: 800;
-        letter-spacing: -1px;
-        line-height: 1.1;
-        background: linear-gradient(120deg, #fff 30%, #a1a1aa);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-    .clear-btn {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid var(--border);
-        color: #fff;
-        font-size: 12px;
-        padding: 8px 14px;
-        border-radius: 999px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background 0.2s, border-color 0.2s;
-        font-family: inherit;
-        margin-left: auto;
-    }
-    .clear-btn:hover {
-        background: rgba(255,255,255,0.1);
-        border-color: rgba(255,255,255,0.2);
-    }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 22px;
-    }
-
-    .card {
-        position: relative;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 14px;
-        cursor: pointer;
-        transition: background 0.25s, border-color 0.25s, transform 0.25s;
-        overflow: hidden;
-        animation: cardIn 0.4s ease backwards;
-    }
-    @keyframes cardIn {
-        from { opacity: 0; transform: translateY(12px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .card:hover {
-        background: var(--card-hover);
-        border-color: rgba(168,85,247,0.35);
-        transform: translateY(-4px);
-    }
-    .card.playing {
-        border-color: rgba(168,85,247,0.6);
-        background: linear-gradient(180deg, rgba(168,85,247,0.1), rgba(236,72,153,0.04));
-    }
-
-    .cover-wrap {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 14px;
-        background: #1a1a1f;
-    }
-    .cover-wrap img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.1);
-    }
-    .card:hover .cover-wrap img { transform: scale(1.06); }
-
-    .cover-wrap::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.5));
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
-    }
-    .card:hover .cover-wrap::after { opacity: 1; }
-
-    .play-overlay {
-        position: absolute;
-        right: 10px;
-        bottom: 10px;
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        border: none;
-        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transform: translateY(10px) scale(0.9);
-        transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-        z-index: 2;
-        box-shadow: 0 8px 24px rgba(168,85,247,0.5);
-    }
-    .play-overlay svg { width: 18px; height: 18px; }
-    .card:hover .play-overlay,
-    .card.playing .play-overlay {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    .play-overlay:hover { transform: scale(1.1) !important; }
-
-    .download-overlay {
-        position: absolute;
-        right: 10px;
-        top: 10px;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        border: none;
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transform: translateY(-6px);
-        transition: all 0.25s;
-        z-index: 3;
-        border: 1px solid rgba(255,255,255,0.15);
-    }
-    .download-overlay svg { width: 16px; height: 16px; }
-    .card:hover .download-overlay {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    .download-overlay:hover {
-        background: rgba(0,0,0,0.85);
-        transform: scale(1.08) !important;
-    }
-    .download-overlay.downloading svg {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    .title {
-        font-size: 14px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 4px;
-        letter-spacing: -0.2px;
-    }
-    .artist {
-        font-size: 12px;
-        color: var(--muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .card.playing .title {
-        background: linear-gradient(90deg, #a855f7, #ec4899, #06b6d4);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-
-    .eq {
-        position: absolute;
-        top: 22px;
-        left: 22px;
-        display: none;
-        gap: 2px;
-        align-items: flex-end;
-        height: 16px;
-        padding: 4px 6px;
-        background: rgba(0,0,0,0.55);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        border-radius: 6px;
-        z-index: 2;
-    }
-    .card.playing .eq { display: flex; }
-    .eq span {
-        width: 3px;
-        background: linear-gradient(180deg, #a855f7, #ec4899);
-        border-radius: 2px;
-        animation: eq 0.9s ease-in-out infinite;
-    }
-    .eq span:nth-child(1) { animation-delay: 0s;    height: 60%; }
-    .eq span:nth-child(2) { animation-delay: 0.15s; height: 100%; }
-    .eq span:nth-child(3) { animation-delay: 0.3s;  height: 40%; }
-    .eq span:nth-child(4) { animation-delay: 0.45s; height: 80%; }
-    @keyframes eq {
-        0%, 100% { transform: scaleY(0.3); }
-        50%      { transform: scaleY(1); }
-    }
-
-    .status {
-        color: var(--muted);
-        font-size: 14px;
-        padding: 12px 0 24px;
-    }
-    .status.error { color: #f87171; }
-    .status:empty { padding: 0; }
-
-    .loader {
-        display: flex;
-        justify-content: center;
-        padding: 40px 0 20px;
-        gap: 8px;
-    }
-    .loader span {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-        animation: bounce 1.2s ease-in-out infinite;
-    }
-    .loader span:nth-child(2) { animation-delay: 0.15s; }
-    .loader span:nth-child(3) { animation-delay: 0.3s; }
-    @keyframes bounce {
-        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-        30%           { transform: translateY(-10px); opacity: 1; }
-    }
-
-    .end-mark {
-        text-align: center;
-        color: #52525b;
-        font-size: 13px;
-        padding: 40px 0 10px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-    }
-
-    .player {
-        position: fixed;
-        left: 50%;
-        bottom: 20px;
-        transform: translateX(-50%);
-        width: calc(100% - 40px);
-        max-width: 980px;
-        background: rgba(20,20,26,0.78);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 22px;
-        z-index: 60;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(168,85,247,0.05);
-        padding: 12px 20px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1), opacity 0.3s;
-    }
-    .player.hidden {
-        transform: translateX(-50%) translateY(140%);
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .progress-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 11px;
-        color: var(--muted);
-        font-variant-numeric: tabular-nums;
-    }
-    .progress-bar {
-        position: relative;
-        flex: 1;
-        height: 4px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 999px;
-        cursor: pointer;
-        transition: height 0.15s;
-    }
-    .progress-bar:hover { height: 6px; }
-    .progress-fill {
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 0%;
-        background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-        border-radius: 999px;
-        transition: width 0.08s linear;
-    }
-    .progress-bar:hover .progress-fill { transition: none; }
-    .progress-thumb {
-        position: absolute;
-        top: 50%;
-        left: 0%;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #fff;
-        transform: translate(-50%, -50%) scale(0);
-        transition: transform 0.15s;
-        box-shadow: 0 0 10px rgba(236,72,153,0.6);
-        pointer-events: none;
-    }
-    .progress-bar:hover .progress-thumb { transform: translate(-50%, -50%) scale(1); }
-
-    .controls-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-    .player-cover {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        background: #1a1a1f;
-        object-fit: cover;
-        flex-shrink: 0;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-    }
-    .player-info {
-        flex: 1;
-        overflow: hidden;
-        min-width: 0;
-    }
-    .player-info .t {
-        font-size: 13px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        letter-spacing: -0.2px;
-    }
-    .player-info .a {
-        font-size: 11px;
-        color: var(--muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-top: 2px;
-    }
-
-    .ctrl-btn {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: none;
-        background: transparent;
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s, transform 0.15s;
-        flex-shrink: 0;
-    }
-    .ctrl-btn:hover { background: rgba(255,255,255,0.08); }
-    .ctrl-btn:active { transform: scale(0.94); }
-    .ctrl-btn svg { width: 22px; height: 22px; }
-    .ctrl-btn.small svg { width: 18px; height: 18px; }
-
-    .play-btn {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-        box-shadow: 0 6px 20px rgba(168,85,247,0.5);
-    }
-    .play-btn:hover {
-        background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-        transform: scale(1.06);
-        box-shadow: 0 8px 26px rgba(236,72,153,0.65);
-    }
-    .play-btn svg { width: 20px; height: 20px; }
-
-    .dl-btn.downloading svg { animation: spin 1s linear infinite; }
-
-    .volume-wrap {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 130px;
-        flex-shrink: 0;
-    }
-    .volume-bar {
-        position: relative;
-        flex: 1;
-        height: 4px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 999px;
-        cursor: pointer;
-    }
-    .volume-fill {
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 80%;
-        background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-        border-radius: 999px;
-    }
-    .volume-bar:hover .volume-fill { background: #fff; }
-    .vol-btn {
-        background: transparent;
-        border: none;
-        color: #fff;
-        cursor: pointer;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-    }
-    .vol-btn svg { width: 18px; height: 18px; }
-
-    .toast {
-        position: fixed;
-        left: 50%;
-        bottom: 120px;
-        transform: translateX(-50%) translateY(20px);
-        background: rgba(20,20,26,0.95);
-        border: 1px solid rgba(168,85,247,0.4);
-        color: #fff;
-        font-size: 13px;
-        padding: 12px 20px;
-        border-radius: 999px;
-        z-index: 100;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s, transform 0.3s;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        max-width: 90vw;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-
-    @media (max-width: 720px) {
-        header { padding: 12px 16px; gap: 12px; }
-        main { padding: 24px 16px 200px; }
-        .section-title { font-size: 24px; }
-        .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
-        .player { width: calc(100% - 24px); bottom: 12px; padding: 10px 14px 8px; }
-        .player-cover { width: 40px; height: 40px; }
-        .volume-wrap { display: none; }
-        .player-info { max-width: 120px; }
-    }
-
-    ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.08);
-        border-radius: 10px;
-        border: 2px solid var(--bg);
-    }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(168,85,247,0.4); }
-</style>
-</head>
-<body>
-
-<div class="bg">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <div class="blob b3"></div>
-</div>
-
-<header>
-    <div class="logo">Flock3+ [Demo]</div>
-    <div class="search-wrap">
-        <input id="query" placeholder="Что послушаем? Трек или исполнитель…"
-               onkeydown="if(event.key==='Enter') doSearch()">
-        <button class="search-btn" onclick="doSearch()" aria-label="Искать">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="7"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-        </button>
-    </div>
-</header>
-
-<main>
-    <div class="section-head">
-        <div class="section-title" id="sectionTitle">Рекомендации</div>
-        <button class="clear-btn" id="clearBtn" hidden onclick="exitSearch()">← Назад</button>
-    </div>
-
-    <div class="status" id="status">Загрузка…</div>
-    <div class="grid" id="grid"></div>
-    <div id="sentinel"></div>
-</main>
-
-<div class="player hidden" id="player">
-    <div class="progress-row">
-        <span id="timeCurrent">0:00</span>
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-fill" id="progressFill"></div>
-            <div class="progress-thumb" id="progressThumb"></div>
-        </div>
-        <span id="timeTotal">0:00</span>
-    </div>
-
-    <div class="controls-row">
-        <img class="player-cover" id="playerCover" alt="">
-        <div class="player-info">
-            <div class="t" id="playerTitle">—</div>
-            <div class="a" id="playerArtist"></div>
-        </div>
-
-        <button class="ctrl-btn small" id="prevBtn" title="Предыдущий">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-        </button>
-
-        <button class="ctrl-btn play-btn" id="playBtn" title="Играть">
-            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <svg id="pauseIcon" style="display:none" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
-        </button>
-
-        <button class="ctrl-btn small" id="nextBtn" title="Следующий">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
-        </button>
-
-        <button class="ctrl-btn small dl-btn" id="downloadBtn" title="Скачать трек">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 4v12"></path>
-                <path d="M6 12l6 6 6-6"></path>
-                <path d="M5 20h14"></path>
-            </svg>
-        </button>
-
-        <div class="volume-wrap">
-            <button class="vol-btn" id="volBtn">
-                <svg id="volIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
-            </button>
-            <div class="volume-bar" id="volumeBar">
-                <div class="volume-fill" id="volumeFill"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="toast" id="toast"></div>
-<audio id="audio" preload="none"></audio>
-
-<script>
-const API_BASE = "https://api.audius.co";
-const APP_NAME = "Flock3Plus";
-const PAGE_SIZE = 30;
-
-const audioEl     = document.getElementById("audio");
-const gridEl      = document.getElementById("grid");
-const statusEl    = document.getElementById("status");
-const titleEl     = document.getElementById("sectionTitle");
-const clearBtn    = document.getElementById("clearBtn");
-const sentinel    = document.getElementById("sentinel");
-const toastEl     = document.getElementById("toast");
-
-const playerEl    = document.getElementById("player");
-const playerCover = document.getElementById("playerCover");
-const playerTitle = document.getElementById("playerTitle");
-const playerArtist= document.getElementById("playerArtist");
-const playBtn     = document.getElementById("playBtn");
-const playIcon    = document.getElementById("playIcon");
-const pauseIcon   = document.getElementById("pauseIcon");
-const prevBtn     = document.getElementById("prevBtn");
-const nextBtn     = document.getElementById("nextBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const timeCurrent = document.getElementById("timeCurrent");
-const timeTotal   = document.getElementById("timeTotal");
-const progressBar = document.getElementById("progressBar");
-const progressFill= document.getElementById("progressFill");
-const progressThumb=document.getElementById("progressThumb");
-const volBtn      = document.getElementById("volBtn");
-const volIcon     = document.getElementById("volIcon");
-const volumeBar   = document.getElementById("volumeBar");
-const volumeFill  = document.getElementById("volumeFill");
-
-let mode = "trending";
-let offset = 0;
-let loading = false;
-let exhausted = false;
-
-const seenIds = new Set();
-const loadedTracks = [];
-let currentIndex = -1;
-let currentTrackId = null;
-
-const genrePool = [
-    "Electronic", "Hip-Hop/Rap", "Rock", "Pop", "House", "Techno",
-    "Dubstep", "Trap", "R&B/Soul", "Lo-Fi", "Ambient", "Drum & Bass",
-    "Trance", "Jazz", "Classical", "Reggae", "Country", "Folk",
-    "Latin", "Metal", "Punk", "Funk", "Disco", "Soundtrack"
-];
-const timeWindows = ["allTime", "month", "week"];
-
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-function formatTime(sec) {
-    if (!isFinite(sec) || sec < 0) return "0:00";
-    const m = Math.floor(sec / 60);
-    const s = String(Math.floor(sec % 60)).padStart(2, "0");
-    return `${m}:${s}`;
-}
-
-function setStatus(text, isError = false) {
-    statusEl.textContent = text;
-    statusEl.className = "status" + (isError ? " error" : "");
-}
-
-let toastTimer = null;
-function showToast(text, ms = 2600) {
-    toastEl.textContent = text;
-    toastEl.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove("show"), ms);
-}
-
-function sanitizeFilename(name) {
-    return String(name)
-        .replace(/[\\/:*?"<>|]+/g, "_")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 150) || "track";
-}
-
-function guessExt(blob) {
-    const t = (blob && blob.type) || "";
-    if (t.includes("mpeg") || t.includes("mp3")) return "mp3";
-    if (t.includes("ogg")) return "ogg";
-    if (t.includes("wav")) return "wav";
-    if (t.includes("flac")) return "flac";
-    if (t.includes("mp4") || t.includes("m4a") || t.includes("aac")) return "m4a";
-    return "mp3";
-}
-
-async function downloadTrack(track, btn) {
-    if (!track) return;
-    const url = `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
-
-    if (btn) {
-        btn.classList.add("downloading");
-        btn.disabled = true;
-    }
-    showToast(`Скачиваю «${track.title || "трек"}»…`, 60000);
-
-    try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-        const blob = await resp.blob();
-        const ext = guessExt(blob);
-        const filename = `${sanitizeFilename(track.user?.name || "Unknown")} - ${sanitizeFilename(track.title || "track")}.${ext}`;
-
-        const objectUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-
-        showToast(`Готово: ${filename}`);
-    } catch (e) {
-        showToast("Не удалось скачать: " + e.message);
-    } finally {
-        if (btn) {
-            btn.classList.remove("downloading");
-            btn.disabled = false;
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #101114;
+            --panel: #191a20;
+            --panel-hover: #24252d;
+            --border: #30313a;
+            --text: #f1f1f5;
+            --muted: #9698a5;
+            --accent: #a78bfa;
+            --error: #ff7272;
         }
-    }
-}
 
-function updatePlayingCard() {
-    document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
-    if (currentTrackId) {
-        const card = document.querySelector(`.card[data-track-id="${currentTrackId}"]`);
-        if (card) card.classList.add("playing");
-    }
-}
+        * {
+            box-sizing: border-box;
+        }
 
-function loadTrack(index, autoplay = true) {
-    if (index < 0 || index >= loadedTracks.length) return;
-    const track = loadedTracks[index];
-    currentIndex = index;
-    currentTrackId = track.id;
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
 
-    audioEl.src = `${API_BASE}/v1/tracks/${track.id}/stream?app_name=${APP_NAME}`;
+        button,
+        input {
+            font: inherit;
+        }
 
-    const cover = track.artwork?.["480x480"] || track.artwork?.["150x150"] || "";
-    if (cover) playerCover.src = cover;
-    playerTitle.textContent = track.title || "Без названия";
-    playerArtist.textContent = track.user?.name || "Unknown";
-    playerEl.classList.remove("hidden");
+        button {
+            cursor: pointer;
+        }
 
-    updatePlayingCard();
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 20px 5%;
+            border-bottom: 1px solid var(--border);
+            background: #15161a;
+        }
 
-    if (autoplay) {
-        audioEl.play().catch(e => console.error("play error:", e));
-    }
-}
+        .logo {
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
 
-function playTrack(track) {
-    const idx = loadedTracks.findIndex(t => t.id === track.id);
-    if (idx === -1) return;
+        .logo span {
+            color: var(--accent);
+        }
 
-    if (currentTrackId === track.id) {
-        if (audioEl.paused) audioEl.play().catch(() => {});
-        else audioEl.pause();
-        return;
-    }
-    loadTrack(idx, true);
-}
+        .header-status {
+            color: var(--muted);
+            font-size: 12px;
+        }
 
-function playNext() {
-    if (currentIndex + 1 < loadedTracks.length) {
-        loadTrack(currentIndex + 1, true);
-    } else if (mode === "trending" && !exhausted) {
-        loadTrendingPage().then(() => {
-            if (currentIndex + 1 < loadedTracks.length) loadTrack(currentIndex + 1, true);
-        });
-    }
-}
+        main {
+            width: min(1400px, 92%);
+            margin: 35px auto;
+        }
 
-function playPrev() {
-    if (audioEl.currentTime > 3) {
-        audioEl.currentTime = 0;
-        return;
-    }
-    if (currentIndex > 0) loadTrack(currentIndex - 1, true);
-}
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
 
-function renderTrack(track) {
-    const cover = track.artwork?.["480x480"] || track.artwork?.["150x150"] || "";
-    const title = track.title || "Без названия";
-    const artist = track.user?.name || "Unknown";
+        h1 {
+            margin: 0 0 8px;
+            font-size: clamp(25px, 4vw, 36px);
+        }
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.trackId = track.id;
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
 
-    card.innerHTML = `
-        <div class="cover-wrap">
-            ${cover ? `<img src="${cover}" alt="" loading="lazy">` : ""}
-            <div class="eq"><span></span><span></span><span></span><span></span></div>
-            <button class="download-overlay" aria-label="Скачать" title="Скачать">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 4v12"></path>
-                    <path d="M6 12l6 6 6-6"></path>
-                    <path d="M5 20h14"></path>
-                </svg>
+        .button {
+            padding: 11px 16px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        .button:hover {
+            background: var(--panel-hover);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+            gap: 22px;
+        }
+
+        .card {
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .cover-wrap {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 3 / 4;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+        }
+
+        .cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 180ms ease;
+        }
+
+        .card:hover .cover {
+            transform: scale(1.035);
+        }
+
+        .card-title {
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .card-meta {
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .back-button {
+            margin-bottom: 25px;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 220px minmax(0, 1fr);
+            gap: 30px;
+            margin-bottom: 35px;
+        }
+
+        .details-cover {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+        }
+
+        .details h1 {
+            margin-top: 5px;
+        }
+
+        .genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 18px;
+        }
+
+        .genre {
+            padding: 6px 9px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .section-title {
+            margin: 28px 0 18px;
+            font-size: 21px;
+        }
+
+        .chapter-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .chapter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--panel);
+            text-align: left;
+            color: var(--text);
+        }
+
+        .chapter:hover {
+            background: var(--panel-hover);
+        }
+
+        .chapter small {
+            color: var(--muted);
+        }
+
+        .reader-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .reader-toolbar h1 {
+            font-size: 23px;
+        }
+
+        .reader-image-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reader-image {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            background: white;
+            border-radius: 3px;
+        }
+
+        .reader-info {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            overflow-wrap: anywhere;
+        }
+
+        .reader-info a {
+            color: var(--accent);
+        }
+
+        .reader-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .message {
+            padding: 35px 15px;
+            text-align: center;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .message.error {
+            color: var(--error);
+        }
+
+        .debug {
+            margin-top: 25px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--panel);
+        }
+
+        .debug summary {
+            padding: 13px;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .debug pre {
+            padding: 15px;
+            overflow: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 17px 4%;
+            }
+
+            main {
+                width: 92%;
+                margin-top: 25px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 15px;
+            }
+
+            .details {
+                grid-template-columns: 115px minmax(0, 1fr);
+                gap: 16px;
+            }
+
+            .details h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">Lib Club <span>Manga</span></div>
+        <div class="header-status" id="connectionStatus">Подключение...</div>
+    </header>
+
+    <main>
+        <section class="screen active" id="catalogScreen">
+            <div class="toolbar">
+                <div>
+                    <h1>Latest</h1>
+                    <p class="subtitle">Последние произведения из MangaSter</p>
+                </div>
+
+                <button class="button" id="refreshButton">Обновить</button>
+            </div>
+
+            <div class="grid" id="catalog"></div>
+        </section>
+
+        <section class="screen" id="detailsScreen">
+            <button class="button back-button" id="backToCatalog">
+                ← Каталог
             </button>
-            <button class="play-overlay" aria-label="Play">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+
+            <div id="detailsContent"></div>
+        </section>
+
+        <section class="screen" id="readerScreen">
+            <button class="button back-button" id="backToDetails">
+                ← К главам
             </button>
-        </div>
-        <div class="title">${escapeHtml(title)}</div>
-        <div class="artist">${escapeHtml(artist)}</div>
-    `;
 
-    card.addEventListener("click", () => playTrack(track));
+            <div class="reader-toolbar">
+                <div>
+                    <h1 id="readerTitle">Чтение манги</h1>
+                    <p class="subtitle" id="pageCounter"></p>
+                </div>
 
-    const dlBtn = card.querySelector(".download-overlay");
-    dlBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        downloadTrack(track, dlBtn);
-    });
+                <button class="button" id="openOriginalButton">
+                    Открыть изображение
+                </button>
+            </div>
 
-    if (currentTrackId === track.id) card.classList.add("playing");
-    return card;
-}
+            <div class="reader-navigation">
+                <button class="button" id="previousPage">← Назад</button>
+                <button class="button" id="nextPage">Вперёд →</button>
+            </div>
 
-async function fetchAudius(path) {
-    const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}app_name=${APP_NAME}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const data = await resp.json();
-    return data.data || [];
-}
+            <div class="reader-image-wrap">
+                <div id="readerMessage" class="message hidden"></div>
+                <img id="readerImage" class="reader-image hidden" alt="Страница манги">
 
-async function loadTrendingPage() {
-    if (loading || exhausted) return;
-    loading = true;
+                <div id="imageInfo" class="reader-info hidden">
+                    <strong>Прямая ссылка на изображение</strong>
+                    <p><a id="directImageLink" href="#" target="_blank" rel="noopener"></a></p>
+                    <button class="button" id="copyImageLink">Копировать ссылку</button>
+                </div>
+            </div>
+        </section>
 
-    if (offset === 0) {
-        setStatus("Загрузка…");
-        gridEl.innerHTML = "";
-        removeEndMark();
-        seenIds.clear();
-        loadedTracks.length = 0;
-    } else {
-        setStatus("");
-        showLoader();
-    }
+        <details class="debug">
+            <summary>Отладка API — посмотреть полученный JSON</summary>
+            <pre id="debugOutput">Здесь появятся ответы сервера.</pre>
+        </details>
+    </main>
 
-    try {
-        let added = 0;
-        let attempts = 0;
+    <script>
+        const API_BASE = "https://ahm7xmakki.com/api/manga";
+        const API_ORIGIN = new URL(API_BASE).origin;
 
-        while (added < PAGE_SIZE && attempts < 6) {
-            attempts++;
-            const time = attempts === 1 ? "allTime" : pick(timeWindows);
-            const genre = attempts === 1 ? "" : (attempts % 2 === 0 ? pick(genrePool) : "");
-            const genrePart = genre ? `&genre=${encodeURIComponent(genre)}` : "";
-            const path = `/v1/tracks/trending?time=${time}&limit=${PAGE_SIZE}${genrePart}`;
+        const state = {
+            manga: null,
+            chapters: [],
+            pages: [],
+            currentPage: 0,
+            lastJson: null
+        };
 
-            let tracks;
-            try { tracks = await fetchAudius(path); }
-            catch (e) { if (attempts >= 6) throw e; continue; }
+        const $ = id => document.getElementById(id);
 
-            if (!tracks.length) continue;
+        function setStatus(text) {
+            $("connectionStatus").textContent = text;
+        }
 
-            const shuffled = tracks.slice().sort(() => Math.random() - 0.5);
-            for (const t of shuffled) {
-                if (seenIds.has(t.id)) continue;
-                seenIds.add(t.id);
-                loadedTracks.push(t);
-                const card = renderTrack(t);
-                card.style.animationDelay = (added * 15) + "ms";
-                gridEl.appendChild(card);
-                added++;
-                if (added >= PAGE_SIZE) break;
+        function showScreen(id) {
+            document.querySelectorAll(".screen").forEach(screen => {
+                screen.classList.remove("active");
+            });
+
+            $(id).classList.add("active");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function showMessage(container, text, isError = false) {
+            container.innerHTML = "";
+
+            const div = document.createElement("div");
+            div.className = "message" + (isError ? " error" : "");
+            div.textContent = text;
+
+            container.appendChild(div);
+        }
+
+        function setDebug(json) {
+            state.lastJson = json;
+            $("debugOutput").textContent =
+                typeof json === "string"
+                    ? json
+                    : JSON.stringify(json, null, 2);
+        }
+
+        function makeApiUrl(action, params = {}) {
+            const url = new URL(API_BASE);
+            url.searchParams.set("action", action);
+
+            for (const [key, value] of Object.entries(params)) {
+                url.searchParams.set(key, value);
+            }
+
+            return url.toString();
+        }
+
+        async function apiRequest(action, params = {}) {
+            const url = makeApiUrl(action, params);
+
+            console.log("[API] Request:", url);
+
+            const response = await fetch(url, {
+                method: "GET"
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status + " при запросе " + action);
+            }
+
+            const text = await response.text();
+
+            let json;
+
+            try {
+                json = JSON.parse(text);
+            } catch {
+                setDebug(text);
+                throw new Error("Сервер вернул не JSON. Смотри отладку внизу страницы.");
+            }
+
+            setDebug(json);
+
+            if (json.success === false) {
+                throw new Error(json.message || json.error || "API сообщил об ошибке");
+            }
+
+            return json;
+        }
+
+        function normalizeArray(json, keys) {
+            if (Array.isArray(json)) {
+                return json;
+            }
+
+            for (const key of keys) {
+                if (Array.isArray(json?.[key])) {
+                    return json[key];
+                }
+            }
+
+            return [];
+        }
+
+        function resolveUrl(value) {
+            if (!value || typeof value !== "string") {
+                return "";
+            }
+
+            try {
+                return new URL(value, API_ORIGIN).href;
+            } catch {
+                return value;
             }
         }
 
-        hideLoader();
-
-        if (added === 0) {
-            exhausted = true;
-            if (offset === 0) setStatus("Пока нет треков.");
-            else showEndMark();
-            loading = false;
-            return;
+        function getCoverUrl(manga) {
+            return resolveUrl(
+                manga.cover ||
+                manga.coverUrl ||
+                manga.cover_url ||
+                manga.thumbnail ||
+                ""
+            );
         }
 
-        offset += added;
-        setStatus("");
-    } catch (e) {
-        hideLoader();
-        setStatus("Ошибка загрузки: " + e.message, true);
-    }
-    loading = false;
-}
-
-async function loadSearch(q) {
-    loading = true;
-    exhausted = true;
-    setStatus("Ищу…");
-    gridEl.innerHTML = "";
-    removeEndMark();
-    seenIds.clear();
-    loadedTracks.length = 0;
-
-    try {
-        const tracks = await fetchAudius(
-            `/v1/tracks/search?query=${encodeURIComponent(q)}&limit=60`
-        );
-        if (!tracks.length) {
-            setStatus("Ничего не найдено.");
-            loading = false;
-            return;
+        function getMangaId(manga) {
+            return manga.sourceId ||
+                manga.mangaId ||
+                manga.id ||
+                manga.slug ||
+                "";
         }
-        tracks.forEach((t, i) => {
-            if (seenIds.has(t.id)) return;
-            seenIds.add(t.id);
-            loadedTracks.push(t);
-            const card = renderTrack(t);
-            card.style.animationDelay = (i * 15) + "ms";
-            gridEl.appendChild(card);
+
+        function getChapterId(chapter) {
+            if (typeof chapter === "string") {
+                return chapter;
+            }
+
+            return chapter.chapterId ||
+                chapter.sourceId ||
+                chapter.id ||
+                chapter.chapter_id ||
+                "";
+        }
+
+        function getChapterTitle(chapter, index) {
+            if (typeof chapter === "string") {
+                return "Глава " + (index + 1);
+            }
+
+            return chapter.name ||
+                chapter.title ||
+                chapter.chapterName ||
+                chapter.chapter ||
+                chapter.number ||
+                ("Глава " + (index + 1));
+        }
+
+        function getPageUrl(page) {
+            if (typeof page === "string") {
+                return resolveUrl(page);
+            }
+
+            if (!page || typeof page !== "object") {
+                return "";
+            }
+
+            return resolveUrl(
+                page.url ||
+                page.image ||
+                page.src ||
+                page.imageUrl ||
+                page.image_url ||
+                page.file ||
+                page.path ||
+                ""
+            );
+        }
+
+        async function loadLatest() {
+            const catalog = $("catalog");
+
+            catalog.innerHTML = "";
+            showMessage(catalog, "Загружаем каталог...");
+
+            setStatus("Загрузка каталога");
+
+            try {
+                const json = await apiRequest("latest");
+                const results = normalizeArray(json, [
+                    "results",
+                    "data",
+                    "manga"
+                ]);
+
+                catalog.innerHTML = "";
+
+                if (results.length === 0) {
+                    showMessage(
+                        catalog,
+                        "API ответил, но список произведений не найден. Открой отладку JSON."
+                    );
+
+                    return;
+                }
+
+                for (const manga of results) {
+                    const card = document.createElement("article");
+                    card.className = "card";
+
+                    const coverWrap = document.createElement("div");
+                    coverWrap.className = "cover-wrap";
+
+                    const cover = document.createElement("img");
+                    cover.className = "cover";
+                    cover.loading = "lazy";
+                    cover.alt = manga.name || "Обложка манги";
+                    cover.src = getCoverUrl(manga);
+
+                    cover.onerror = () => {
+                        cover.removeAttribute("src");
+                        cover.alt = "Обложка недоступна";
+                    };
+
+                    coverWrap.appendChild(cover);
+
+                    const title = document.createElement("div");
+                    title.className = "card-title";
+                    title.textContent = manga.name || manga.title || "Без названия";
+
+                    const meta = document.createElement("div");
+                    meta.className = "card-meta";
+                    meta.textContent = manga.status || "";
+
+                    card.append(coverWrap, title, meta);
+
+                    card.addEventListener("click", () => {
+                        openManga(manga);
+                    });
+
+                    catalog.appendChild(card);
+                }
+
+                setStatus("Загружено: " + results.length);
+            } catch (error) {
+                console.error(error);
+                catalog.innerHTML = "";
+
+                showMessage(
+                    catalog,
+                    "Не удалось загрузить каталог: " + error.message +
+                    ". Если браузер сообщает Failed to fetch, проверь CORS и доступность API.",
+                    true
+                );
+
+                setStatus("Ошибка API");
+            }
+        }
+
+        async function openManga(manga) {
+            state.manga = manga;
+            state.chapters = [];
+            state.pages = [];
+
+            showScreen("detailsScreen");
+
+            const container = $("detailsContent");
+            container.innerHTML = "";
+
+            showMessage(container, "Загружаем информацию о манге...");
+
+            const id = getMangaId(manga);
+
+            const details = document.createElement("div");
+            details.className = "details";
+
+            const cover = document.createElement("img");
+            cover.className = "details-cover";
+            cover.alt = "Обложка манги";
+            cover.src = getCoverUrl(manga);
+
+            const info = document.createElement("div");
+
+            const title = document.createElement("h1");
+            title.textContent = manga.name || manga.title || "Без названия";
+
+            const status = document.createElement("p");
+            status.className = "subtitle";
+            status.textContent = "Статус: " + (manga.status || "неизвестен");
+
+            const idText = document.createElement("p");
+            idText.className = "subtitle";
+            idText.textContent = "Source ID: " + id;
+
+            const genres = document.createElement("div");
+            genres.className = "genres";
+
+            for (const genre of manga.genres || []) {
+                const tag = document.createElement("span");
+                tag.className = "genre";
+                tag.textContent = genre;
+                genres.appendChild(tag);
+            }
+
+            info.append(title, status, idText, genres);
+            details.append(cover, info);
+
+            const heading = document.createElement("h2");
+            heading.className = "section-title";
+            heading.textContent = "Главы";
+
+            const list = document.createElement("div");
+            list.className = "chapter-list";
+            list.id = "chapterList";
+
+            container.innerHTML = "";
+            container.append(details, heading, list);
+
+            if (!id) {
+                showMessage(list, "У этого произведения не найден ID.", true);
+                return;
+            }
+
+            showMessage(list, "Загружаем список глав...");
+
+            try {
+                const json = await apiRequest("chapters", { id });
+
+                const chapters = normalizeArray(json, [
+                    "chapters",
+                    "results",
+                    "data"
+                ]);
+
+                state.chapters = chapters;
+                list.innerHTML = "";
+
+                if (chapters.length === 0) {
+                    showMessage(
+                        list,
+                        "Список глав пуст или имеет другую структуру. Посмотри JSON в отладке.",
+                        true
+                    );
+                    return;
+                }
+
+                chapters.forEach((chapter, index) => {
+                    const button = document.createElement("button");
+                    button.className = "chapter";
+                    button.type = "button";
+
+                    const name = document.createElement("span");
+                    name.textContent = getChapterTitle(chapter, index);
+
+                    const openLabel = document.createElement("small");
+                    openLabel.textContent = "Открыть →";
+
+                    button.append(name, openLabel);
+
+                    button.addEventListener("click", () => {
+                        openChapter(chapter, index);
+                    });
+
+                    list.appendChild(button);
+                });
+            } catch (error) {
+                console.error(error);
+
+                showMessage(
+                    list,
+                    "Не удалось получить главы: " + error.message,
+                    true
+                );
+            }
+        }
+
+        async function openChapter(chapter, index) {
+            const chapterId = getChapterId(chapter);
+
+            if (!chapterId) {
+                alert(
+                    "В ответе API не найден chapterId. Открой отладку JSON, " +
+                    "чтобы увидеть реальные поля главы."
+                );
+                return;
+            }
+
+            showScreen("readerScreen");
+
+            $("readerTitle").textContent =
+                getChapterTitle(chapter, index);
+
+            $("readerImage").classList.add("hidden");
+            $("imageInfo").classList.add("hidden");
+
+            $("readerMessage").classList.remove("hidden");
+            showMessage($("readerMessage"), "Получаем страницы главы...");
+
+            try {
+                const json = await apiRequest("pages", {
+                    id: chapterId
+                });
+
+                const pages = normalizeArray(json, [
+                    "pages",
+                    "results",
+                    "data"
+                ]);
+
+                state.pages = pages
+                    .map(page => ({
+                        original: page,
+                        url: getPageUrl(page)
+                    }))
+                    .filter(page => page.url);
+
+                if (state.pages.length === 0) {
+                    showMessage(
+                        $("readerMessage"),
+                        "Страницы не найдены или структура ответа отличается. " +
+                        "Посмотри JSON в блоке отладки.",
+                        true
+                    );
+
+                    return;
+                }
+
+                state.currentPage = 0;
+                displayPage();
+            } catch (error) {
+                console.error(error);
+
+                showMessage(
+                    $("readerMessage"),
+                    "Не удалось загрузить страницы: " + error.message,
+                    true
+                );
+            }
+        }
+
+        function displayPage() {
+            const page = state.pages[state.currentPage];
+
+            if (!page) {
+                return;
+            }
+
+            const image = $("readerImage");
+
+            $("readerMessage").classList.add("hidden");
+            $("imageInfo").classList.remove("hidden");
+
+            $("pageCounter").textContent =
+                "Страница " + (state.currentPage + 1) +
+                " из " + state.pages.length;
+
+            $("directImageLink").href = page.url;
+            $("directImageLink").textContent = page.url;
+
+            $("openOriginalButton").onclick = () => {
+                window.open(page.url, "_blank", "noopener");
+            };
+
+            image.onload = () => {
+                image.classList.remove("hidden");
+            };
+
+            image.onerror = () => {
+                image.classList.add("hidden");
+
+                showMessage(
+                    $("readerMessage"),
+                    "Не удалось загрузить изображение по прямой ссылке. " +
+                    "Попробуй открыть URL отдельно.",
+                    true
+                );
+
+                $("readerMessage").classList.remove("hidden");
+            };
+
+            image.src = page.url;
+
+            $("previousPage").disabled = state.currentPage === 0;
+            $("nextPage").disabled =
+                state.currentPage >= state.pages.length - 1;
+        }
+
+        $("refreshButton").addEventListener("click", loadLatest);
+
+        $("backToCatalog").addEventListener("click", () => {
+            showScreen("catalogScreen");
         });
-        setStatus("");
-    } catch (e) {
-        setStatus("Ошибка: " + e.message, true);
-    }
-    loading = false;
-}
 
-function doSearch() {
-    const q = document.getElementById("query").value.trim();
-    if (!q) return;
-    mode = "search";
-    offset = 0;
-    titleEl.textContent = "Поиск";
-    clearBtn.hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    loadSearch(q);
-}
+        $("backToDetails").addEventListener("click", () => {
+            showScreen("detailsScreen");
+        });
 
-function exitSearch() {
-    document.getElementById("query").value = "";
-    mode = "trending";
-    offset = 0;
-    exhausted = false;
-    titleEl.textContent = "Рекомендации";
-    clearBtn.hidden = true;
-    removeEndMark();
-    loadTrendingPage();
-}
+        $("previousPage").addEventListener("click", () => {
+            if (state.currentPage > 0) {
+                state.currentPage--;
+                displayPage();
+            }
+        });
 
-function showLoader() {
-    if (document.getElementById("loaderEl")) return;
-    const d = document.createElement("div");
-    d.id = "loaderEl";
-    d.className = "loader";
-    d.innerHTML = "<span></span><span></span><span></span>";
-    sentinel.parentNode.insertBefore(d, sentinel);
-}
-function hideLoader() {
-    const el = document.getElementById("loaderEl");
-    if (el) el.remove();
-}
-function showEndMark() {
-    if (document.getElementById("endMark")) return;
-    const d = document.createElement("div");
-    d.id = "endMark";
-    d.className = "end-mark";
-    d.textContent = "— это всё —";
-    gridEl.parentNode.insertBefore(d, sentinel);
-}
-function removeEndMark() {
-    const el = document.getElementById("endMark");
-    if (el) el.remove();
-}
+        $("nextPage").addEventListener("click", () => {
+            if (state.currentPage < state.pages.length - 1) {
+                state.currentPage++;
+                displayPage();
+            }
+        });
 
-playBtn.addEventListener("click", () => {
-    if (!audioEl.src) return;
-    if (audioEl.paused) audioEl.play().catch(() => {});
-    else audioEl.pause();
-});
+        $("copyImageLink").addEventListener("click", async () => {
+            const url = $("directImageLink").href;
 
-nextBtn.addEventListener("click", playNext);
-prevBtn.addEventListener("click", playPrev);
+            try {
+                await navigator.clipboard.writeText(url);
+                $("copyImageLink").textContent = "Скопировано!";
+            } catch {
+                prompt("Скопируй прямую ссылку:", url);
+            }
+        });
 
-downloadBtn.addEventListener("click", () => {
-    if (currentIndex < 0) return;
-    downloadTrack(loadedTracks[currentIndex], downloadBtn);
-});
-
-audioEl.addEventListener("play", () => {
-    playIcon.style.display = "none";
-    pauseIcon.style.display = "";
-});
-audioEl.addEventListener("pause", () => {
-    playIcon.style.display = "";
-    pauseIcon.style.display = "none";
-});
-
-audioEl.addEventListener("loadedmetadata", () => {
-    timeTotal.textContent = formatTime(audioEl.duration);
-});
-
-audioEl.addEventListener("timeupdate", () => {
-    const pct = audioEl.duration ? (audioEl.currentTime / audioEl.duration) * 100 : 0;
-    progressFill.style.width = pct + "%";
-    progressThumb.style.left = pct + "%";
-    timeCurrent.textContent = formatTime(audioEl.currentTime);
-});
-
-audioEl.addEventListener("ended", () => {
-    playNext();
-});
-
-let seeking = false;
-function seekAt(e) {
-    const rect = progressBar.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const pct = Math.max(0, Math.min(1, x / rect.width));
-    if (audioEl.duration) {
-        audioEl.currentTime = pct * audioEl.duration;
-        progressFill.style.width = (pct * 100) + "%";
-        progressThumb.style.left = (pct * 100) + "%";
-    }
-}
-progressBar.addEventListener("mousedown", (e) => {
-    seeking = true;
-    seekAt(e);
-});
-window.addEventListener("mousemove", (e) => { if (seeking) seekAt(e); });
-window.addEventListener("mouseup", () => { seeking = false; });
-progressBar.addEventListener("touchstart", (e) => { seekAt(e); }, { passive: true });
-progressBar.addEventListener("touchmove", (e) => { seekAt(e); }, { passive: true });
-
-let currentVol = 0.8;
-let prevVol = 0.8;
-audioEl.volume = currentVol;
-volumeFill.style.width = (currentVol * 100) + "%";
-
-function setVolume(v) {
-    currentVol = Math.max(0, Math.min(1, v));
-    audioEl.volume = currentVol;
-    volumeFill.style.width = (currentVol * 100) + "%";
-    volIcon.style.opacity = currentVol === 0 ? "0.4" : "1";
-}
-function volSeek(e) {
-    const rect = volumeBar.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    setVolume(x / rect.width);
-}
-let volSeeking = false;
-volumeBar.addEventListener("mousedown", (e) => { volSeeking = true; volSeek(e); });
-window.addEventListener("mousemove", (e) => { if (volSeeking) volSeek(e); });
-window.addEventListener("mouseup", () => { volSeeking = false; });
-volumeBar.addEventListener("touchstart", (e) => { volSeek(e); }, { passive: true });
-volumeBar.addEventListener("touchmove", (e) => { volSeek(e); }, { passive: true });
-volBtn.addEventListener("click", () => {
-    if (currentVol > 0) { prevVol = currentVol; setVolume(0); }
-    else setVolume(prevVol || 0.8);
-});
-
-document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT") return;
-    if (e.code === "Space") { e.preventDefault(); playBtn.click(); }
-    else if (e.code === "ArrowRight" && audioEl.duration) {
-        audioEl.currentTime = Math.min(audioEl.duration, audioEl.currentTime + 5);
-    }
-    else if (e.code === "ArrowLeft" && audioEl.duration) {
-        audioEl.currentTime = Math.max(0, audioEl.currentTime - 5);
-    }
-});
-
-const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && mode === "trending" && !loading && !exhausted) {
-        loadTrendingPage();
-    }
-}, { rootMargin: "900px" });
-observer.observe(sentinel);
-
-function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    })[c]);
-}
-
-loadTrendingPage();
-</script>
-
+        loadLatest();
+    </script>
 </body>
 </html>
