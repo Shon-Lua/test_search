@@ -1,1115 +1,422 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://ahm7xmakki.com">
-    <link rel="dns-prefetch" href="//ahm7xmakki.com">
-    <title>Lib Club Manga</title>
-
-    <style>
-        :root {
-            color-scheme: dark;
-            --bg: #101114;
-            --panel: #191a20;
-            --panel-hover: #24252d;
-            --border: #30313a;
-            --text: #f1f1f5;
-            --muted: #9698a5;
-            --accent: #a78bfa;
-            --error: #ff7272;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: Arial, sans-serif;
-        }
-
-        button {
-            font: inherit;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            opacity: 0.35;
-            cursor: default;
-        }
-
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 20px 5%;
-            border-bottom: 1px solid var(--border);
-            background: #15161a;
-        }
-
-        .logo {
-            font-size: 23px;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .logo span {
-            color: var(--accent);
-        }
-
-        .header-status {
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        main {
-            width: min(1400px, 92%);
-            margin: 35px auto;
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        h1 {
-            margin: 0 0 8px;
-            font-size: clamp(25px, 4vw, 36px);
-        }
-
-        .subtitle {
-            margin: 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.6;
-            overflow-wrap: anywhere;
-        }
-
-        .button {
-            padding: 11px 16px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: var(--panel);
-            color: var(--text);
-        }
-
-        .button:hover:not(:disabled) {
-            background: var(--panel-hover);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 22px;
-            align-items: start;
-        }
-
-        .grid > .message {
-            grid-column: 1 / -1;
-        }
-
-        .card {
-            min-width: 0;
-            cursor: pointer;
-        }
-
-        .cover-wrap {
-            position: relative;
-            overflow: hidden;
-            aspect-ratio: 3 / 4;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--panel);
-        }
-
-        .cover {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 180ms ease;
-            background: var(--panel);
-        }
-
-        .card:hover .cover {
-            transform: scale(1.035);
-        }
-
-        .card-title {
-            margin-top: 10px;
-            font-weight: 600;
-            font-size: 14px;
-            line-height: 1.45;
-            overflow-wrap: anywhere;
-        }
-
-        .card-meta {
-            margin-top: 5px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .screen {
-            display: none;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        .back-button {
-            margin-bottom: 25px;
-        }
-
-        .details {
-            display: grid;
-            grid-template-columns: 220px minmax(0, 1fr);
-            gap: 30px;
-            margin-bottom: 35px;
-        }
-
-        .details-cover {
-            display: block;
-            width: 100%;
-            height: auto;
-            align-self: start;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--panel);
-        }
-
-        .details h1 {
-            margin-top: 5px;
-        }
-
-        .genres {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            margin-top: 18px;
-        }
-
-        .genre {
-            padding: 6px 9px;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .section-title {
-            margin: 28px 0 18px;
-            font-size: 21px;
-        }
-
-        .chapter-list {
-            display: grid;
-            gap: 8px;
-        }
-
-        .chapter-list > .message {
-            grid-column: 1 / -1;
-        }
-
-        .chapter {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: var(--panel);
-            text-align: left;
-            color: var(--text);
-        }
-
-        .chapter:hover {
-            background: var(--panel-hover);
-        }
-
-        .chapter small {
-            color: var(--muted);
-            flex-shrink: 0;
-        }
-
-        .reader-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .reader-toolbar h1 {
-            font-size: 23px;
-        }
-
-        .reader-image-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            min-height: 100px;
-        }
-
-        .reader-image {
-            display: block;
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            min-height: 100px;
-            background: #202126;
-            border-radius: 3px;
-        }
-
-        .reader-info {
-            width: 100%;
-            padding: 15px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--panel);
-            overflow-wrap: anywhere;
-        }
-
-        .reader-info a {
-            color: var(--accent);
-            overflow-wrap: anywhere;
-        }
-
-        .reader-navigation {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .message {
-            padding: 25px 15px;
-            text-align: center;
-            color: var(--muted);
-            line-height: 1.7;
-        }
-
-        .message.error {
-            color: var(--error);
-        }
-
-        .loader {
-            width: 26px;
-            height: 26px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            margin: 0 auto 12px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .debug {
-            margin-top: 25px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: var(--panel);
-        }
-
-        .debug summary {
-            padding: 13px;
-            cursor: pointer;
-            color: var(--muted);
-        }
-
-        .debug pre {
-            padding: 15px;
-            overflow: auto;
-            font-size: 12px;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        @media (max-width: 600px) {
-            .header {
-                padding: 17px 4%;
-            }
-
-            main {
-                width: 92%;
-                margin-top: 25px;
-            }
-
-            .grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 15px;
-            }
-
-            .details {
-                grid-template-columns: 115px minmax(0, 1fr);
-                gap: 16px;
-            }
-
-            .details h1 {
-                font-size: 22px;
-            }
-
-            .reader-image {
-                width: 100%;
-                min-height: 100px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lib Club Manga</title>
+<style>
+:root{color-scheme:dark;--bg:#101114;--panel:#191a20;--border:#30313a;--text:#f1f1f5;--muted:#9698a5;--accent:#a78bfa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 5%;background:#15161a;border-bottom:1px solid var(--border)}
+.logo{font-size:23px;font-weight:800}.logo span{color:var(--accent)}
+main{width:min(1400px,92%);margin:30px auto}
+h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px}
+h2{font-size:22px}
+p{line-height:1.6}
+.muted,.status{color:var(--muted);font-size:13px}
+.search{display:flex;gap:8px;margin:20px 0}
+input,button{font:inherit}
+input{min-width:0;flex:1;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text)}
+button{padding:11px 15px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);cursor:pointer}
+button:hover:not(:disabled){background:#292a32}
+button:disabled{opacity:.4;cursor:default}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:20px;align-items:start}
+.card{min-width:0;cursor:pointer}
+.coverbox{aspect-ratio:3/4;overflow:hidden;border:1px solid var(--border);border-radius:9px;background:var(--panel)}
+.cover{display:block;width:100%;height:100%;object-fit:cover}
+.card-title{font-size:14px;font-weight:600;line-height:1.4;margin-top:9px;overflow-wrap:anywhere}
+.card-meta{font-size:12px;color:var(--muted);margin-top:5px}
+.screen{display:none}.screen.active{display:block}
+.back{margin-bottom:22px}
+.details{display:grid;grid-template-columns:190px minmax(0,1fr);gap:25px}
+.details-cover{width:100%;height:auto;border-radius:9px}
+.genres{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.genre{border:1px solid var(--border);border-radius:20px;padding:5px 9px;font-size:12px;color:var(--muted)}
+.chapter-list{display:grid;gap:8px;margin-top:16px}
+.chapter{display:flex;justify-content:space-between;gap:12px;text-align:left;align-items:center}
+.chapter span{overflow-wrap:anywhere}
+.reader-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.reader-image{display:block;width:auto;max-width:100%;height:auto;margin:15px auto;background:#fff}
+.nav{display:flex;justify-content:center;gap:12px;margin:18px 0}
+.message{padding:25px 12px;text-align:center;color:var(--muted);line-height:1.6}
+.error{color:#ff7777}
+a{color:var(--accent);overflow-wrap:anywhere}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto}
+details{margin-top:30px;border:1px solid var(--border);border-radius:9px;padding:12px}
+.hidden{display:none!important}
+@media(max-width:600px){main{margin-top:22px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.details{grid-template-columns:110px minmax(0,1fr);gap:14px}.reader-image{width:100%}header{padding:16px 4%}}
+</style>
 </head>
-
 <body>
-    <header class="header">
-        <div class="logo">Lib Club <span>Manga</span></div>
-        <div class="header-status" id="connectionStatus">Подключение...</div>
-    </header>
-
-    <main>
-        <section class="screen active" id="catalogScreen">
-            <div class="toolbar">
-                <div>
-                    <h1>Latest</h1>
-                    <p class="subtitle">Последние произведения из MangaSter</p>
-                </div>
-
-                <button class="button" id="refreshButton">Обновить</button>
-            </div>
-
-            <div class="grid" id="catalog"></div>
-        </section>
-
-        <section class="screen" id="detailsScreen">
-            <button class="button back-button" id="backToCatalog">← Каталог</button>
-            <div id="detailsContent"></div>
-        </section>
-
-        <section class="screen" id="readerScreen">
-            <button class="button back-button" id="backToDetails">← К главам</button>
-
-            <div class="reader-toolbar">
-                <div>
-                    <h1 id="readerTitle">Чтение манги</h1>
-                    <p class="subtitle" id="pageCounter"></p>
-                </div>
-
-                <button class="button" id="openOriginalButton">Открыть изображение</button>
-            </div>
-
-            <div class="reader-navigation">
-                <button class="button" id="previousPage">← Назад</button>
-                <button class="button" id="nextPage">Вперёд →</button>
-            </div>
-
-            <div class="reader-image-wrap">
-                <div id="readerMessage" class="hidden"></div>
-
-                <img
-                    id="readerImage"
-                    class="reader-image hidden"
-                    alt="Страница манги"
-                    decoding="async"
-                >
-
-                <div id="imageInfo" class="reader-info hidden">
-                    <strong>Прямая ссылка на изображение</strong>
-                    <p>
-                        <a id="directImageLink" href="#" target="_blank" rel="noopener"></a>
-                    </p>
-                    <button class="button" id="copyImageLink">Копировать ссылку</button>
-                </div>
-            </div>
-        </section>
-
-        <details class="debug">
-            <summary>Отладка API — посмотреть полученный JSON</summary>
-            <pre id="debugOutput">Здесь появятся ответы сервера.</pre>
-        </details>
-    </main>
-
-    <script>
-        const API_BASE = "https://ahm7xmakki.com/api/manga";
-        const API_ORIGIN = new URL(API_BASE).origin;
-
-        const state = {
-            manga: null,
-            chapters: [],
-            pages: [],
-            currentPage: 0,
-            chapterIndex: 0,
-            chapterCache: new Map(),
-            lastJson: null,
-            readerSession: 0
-        };
-
-        const imageCache = new Map();
-        const $ = id => document.getElementById(id);
-
-        function setStatus(text) {
-            $("connectionStatus").textContent = text;
-        }
-
-        function showScreen(id) {
-            document.querySelectorAll(".screen").forEach(screen => {
-                screen.classList.remove("active");
-            });
-
-            $(id).classList.add("active");
-            window.scrollTo(0, 0);
-        }
-
-        function showMessage(container, text, isError = false, loading = false) {
-            container.replaceChildren();
-            container.classList.remove("hidden");
-
-            const box = document.createElement("div");
-            box.className = "message" + (isError ? " error" : "");
-
-            if (loading) {
-                const spinner = document.createElement("div");
-                spinner.className = "loader";
-                box.appendChild(spinner);
-            }
-
-            const label = document.createElement("div");
-            label.textContent = text;
-            box.appendChild(label);
-
-            container.appendChild(box);
-        }
-
-        function setDebug(json) {
-            state.lastJson = json;
-            $("debugOutput").textContent =
-                typeof json === "string" ? json : JSON.stringify(json, null, 2);
-        }
-
-        function makeApiUrl(action, params = {}) {
-            const url = new URL(API_BASE);
-            url.searchParams.set("action", action);
-
-            for (const [key, value] of Object.entries(params)) {
-                url.searchParams.set(key, value);
-            }
-
-            return url.toString();
-        }
-
-        async function apiRequest(action, params = {}) {
-            const url = makeApiUrl(action, params);
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 20000);
-
-            try {
-                const response = await fetch(url, {
-                    method: "GET",
-                    cache: "default",
-                    signal: controller.signal
-                });
-
-                if (!response.ok) {
-                    throw new Error("HTTP " + response.status);
-                }
-
-                const json = await response.json();
-                setDebug(json);
-
-                if (json.success === false) {
-                    throw new Error(json.message || json.error || "Ошибка API");
-                }
-
-                return json;
-            } catch (error) {
-                if (error.name === "AbortError") {
-                    throw new Error("Превышено время ожидания ответа API");
-                }
-
-                throw error;
-            } finally {
-                clearTimeout(timeout);
-            }
-        }
-
-        function normalizeArray(json, keys) {
-            if (Array.isArray(json)) {
-                return json;
-            }
-
-            for (const key of keys) {
-                if (Array.isArray(json?.[key])) {
-                    return json[key];
-                }
-            }
-
-            return [];
-        }
-
-        function resolveUrl(value) {
-            if (!value || typeof value !== "string") {
-                return "";
-            }
-
-            try {
-                return new URL(value, API_ORIGIN).href;
-            } catch {
-                return value;
-            }
-        }
-
-        function getCoverUrl(manga) {
-            return resolveUrl(
-                manga.cover ||
-                manga.coverUrl ||
-                manga.cover_url ||
-                manga.thumbnail ||
-                ""
-            );
-        }
-
-        function getMangaId(manga) {
-            return manga.sourceId ||
-                manga.mangaId ||
-                manga.id ||
-                manga.slug ||
-                "";
-        }
-
-        function getChapterId(chapter) {
-            if (typeof chapter === "string") {
-                return chapter;
-            }
-
-            return chapter.chapterId ||
-                chapter.sourceId ||
-                chapter.id ||
-                chapter.chapter_id ||
-                "";
-        }
-
-        function getChapterTitle(chapter, index) {
-            if (typeof chapter === "string") {
-                return "Глава " + (index + 1);
-            }
-
-            return chapter.name ||
-                chapter.title ||
-                chapter.chapterName ||
-                chapter.chapter ||
-                chapter.number ||
-                ("Глава " + (index + 1));
-        }
-
-        function getPageUrl(page) {
-            if (typeof page === "string") {
-                return resolveUrl(page);
-            }
-
-            if (!page || typeof page !== "object") {
-                return "";
-            }
-
-            return resolveUrl(
-                page.url ||
-                page.image ||
-                page.src ||
-                page.imageUrl ||
-                page.imageURL ||
-                page.image_url ||
-                page.fileUrl ||
-                page.file ||
-                page.path ||
-                ""
-            );
-        }
-
-        function loadImage(url, priority = "low") {
-            if (!url) {
-                return Promise.reject(new Error("Пустой URL изображения"));
-            }
-
-            const existing = imageCache.get(url);
-
-            if (existing) {
-                existing.priority = priority;
-                return existing.promise;
-            }
-
-            const img = new Image();
-            img.decoding = "async";
-            img.fetchPriority = priority;
-
-            const entry = {
-                img,
-                priority,
-                promise: null
-            };
-
-            entry.promise = new Promise((resolve, reject) => {
-                img.onload = () => resolve(img);
-                img.onerror = () => reject(new Error("Не удалось загрузить изображение"));
-                img.src = url;
-
-                if (img.complete && img.naturalWidth > 0) {
-                    resolve(img);
-                }
-            });
-
-            imageCache.set(url, entry);
-
-            entry.promise.catch(() => {
-                if (imageCache.get(url) === entry) {
-                    imageCache.delete(url);
-                }
-            });
-
-            while (imageCache.size > 12) {
-                const oldestUrl = imageCache.keys().next().value;
-                imageCache.delete(oldestUrl);
-            }
-
-            return entry.promise;
-        }
-
-        function preloadPage(index) {
-            if (index < 0 || index >= state.pages.length) {
-                return;
-            }
-
-            const page = state.pages[index];
-
-            if (!page?.url || imageCache.has(page.url)) {
-                return;
-            }
-
-            loadImage(
-                page.url,
-                index === state.currentPage + 1 ? "high" : "low"
-            ).catch(() => {});
-        }
-
-        function preloadNearbyPages() {
-            preloadPage(state.currentPage + 1);
-            preloadPage(state.currentPage + 2);
-        }
-
-        async function loadLatest() {
-            const catalog = $("catalog");
-
-            catalog.replaceChildren();
-            showMessage(catalog, "Загружаем каталог...", false, true);
-            $("refreshButton").disabled = true;
-            setStatus("Загрузка каталога");
-
-            try {
-                const json = await apiRequest("latest");
-                const results = normalizeArray(json, [
-                    "results",
-                    "data",
-                    "manga"
-                ]);
-
-                catalog.replaceChildren();
-                catalog.className = "grid";
-
-                if (results.length === 0) {
-                    showMessage(catalog, "Список произведений не найден.");
-                    return;
-                }
-
-                const fragment = document.createDocumentFragment();
-
-                results.forEach((manga, index) => {
-                    const card = document.createElement("article");
-                    card.className = "card";
-
-                    const coverWrap = document.createElement("div");
-                    coverWrap.className = "cover-wrap";
-
-                    const cover = document.createElement("img");
-                    cover.className = "cover";
-                    cover.alt = manga.name || "Обложка манги";
-                    cover.decoding = "async";
-                    cover.loading = index < 8 ? "eager" : "lazy";
-
-                    if (index < 4) {
-                        cover.fetchPriority = "high";
-                    }
-
-                    cover.src = getCoverUrl(manga);
-
-                    cover.onerror = () => {
-                        cover.removeAttribute("src");
-                        cover.alt = "Обложка недоступна";
-                    };
-
-                    coverWrap.appendChild(cover);
-
-                    const title = document.createElement("div");
-                    title.className = "card-title";
-                    title.textContent = manga.name || manga.title || "Без названия";
-
-                    const meta = document.createElement("div");
-                    meta.className = "card-meta";
-                    meta.textContent = manga.status || "";
-
-                    card.append(coverWrap, title, meta);
-
-                    card.addEventListener("click", () => {
-                        openManga(manga);
-                    });
-
-                    fragment.appendChild(card);
-                });
-
-                catalog.appendChild(fragment);
-                setStatus("Загружено: " + results.length);
-            } catch (error) {
-                console.error(error);
-                catalog.replaceChildren();
-
-                showMessage(
-                    catalog,
-                    "Не удалось загрузить каталог: " + error.message,
-                    true
-                );
-
-                setStatus("Ошибка API");
-            } finally {
-                $("refreshButton").disabled = false;
-            }
-        }
-
-        async function openManga(manga) {
-            state.manga = manga;
-            state.chapters = [];
-            state.pages = [];
-
-            showScreen("detailsScreen");
-
-            const container = $("detailsContent");
-            container.replaceChildren();
-
-            const id = getMangaId(manga);
-            const details = document.createElement("div");
-            details.className = "details";
-
-            const cover = document.createElement("img");
-            cover.className = "details-cover";
-            cover.alt = "Обложка манги";
-            cover.decoding = "async";
-            cover.src = getCoverUrl(manga);
-
-            const info = document.createElement("div");
-
-            const title = document.createElement("h1");
-            title.textContent = manga.name || manga.title || "Без названия";
-
-            const status = document.createElement("p");
-            status.className = "subtitle";
-            status.textContent = "Статус: " + (manga.status || "неизвестен");
-
-            const idText = document.createElement("p");
-            idText.className = "subtitle";
-            idText.textContent = "Source ID: " + id;
-
-            const genres = document.createElement("div");
-            genres.className = "genres";
-
-            for (const genre of manga.genres || []) {
-                const tag = document.createElement("span");
-                tag.className = "genre";
-                tag.textContent = genre;
-                genres.appendChild(tag);
-            }
-
-            info.append(title, status, idText, genres);
-            details.append(cover, info);
-
-            const heading = document.createElement("h2");
-            heading.className = "section-title";
-            heading.textContent = "Главы";
-
-            const list = document.createElement("div");
-            list.className = "chapter-list";
-
-            container.append(details, heading, list);
-
-            if (!id) {
-                showMessage(list, "У произведения не найден идентификатор.", true);
-                return;
-            }
-
-            showMessage(list, "Загружаем список глав...", false, true);
-
-            try {
-                const json = await apiRequest("chapters", { id });
-
-                if (state.manga !== manga) {
-                    return;
-                }
-
-                const chapters = normalizeArray(json, [
-                    "chapters",
-                    "results",
-                    "data"
-                ]);
-
-                state.chapters = chapters;
-                list.replaceChildren();
-
-                if (chapters.length === 0) {
-                    showMessage(list, "Главы не найдены.", true);
-                    return;
-                }
-
-                const fragment = document.createDocumentFragment();
-
-                chapters.forEach((chapter, index) => {
-                    const button = document.createElement("button");
-                    button.className = "chapter";
-                    button.type = "button";
-
-                    const name = document.createElement("span");
-                    name.textContent = getChapterTitle(chapter, index);
-
-                    const openLabel = document.createElement("small");
-                    openLabel.textContent = "Открыть →";
-
-                    button.append(name, openLabel);
-
-                    button.addEventListener("click", () => {
-                        openChapter(chapter, index);
-                    });
-
-                    fragment.appendChild(button);
-                });
-
-                list.appendChild(fragment);
-            } catch (error) {
-                console.error(error);
-                showMessage(list, "Не удалось получить главы: " + error.message, true);
-            }
-        }
-
-        async function openChapter(chapter, index) {
-            const chapterId = getChapterId(chapter);
-
-            if (!chapterId) {
-                alert("В ответе API не найден chapterId. Проверь JSON в отладке.");
-                return;
-            }
-
-            state.chapterIndex = index;
-            state.currentPage = 0;
-
-            showScreen("readerScreen");
-
-            $("readerTitle").textContent = getChapterTitle(chapter, index);
-            $("readerImage").classList.add("hidden");
-            $("imageInfo").classList.add("hidden");
-
-            showMessage($("readerMessage"), "Получаем страницы главы...", false, true);
-
-            const session = ++state.readerSession;
-
-            try {
-                let pages = state.chapterCache.get(chapterId);
-
-                if (!pages) {
-                    const json = await apiRequest("pages", { id: chapterId });
-
-                    pages = normalizeArray(json, [
-                        "pages",
-                        "results",
-                        "data"
-                    ])
-                        .map(page => ({
-                            original: page,
-                            url: getPageUrl(page)
-                        }))
-                        .filter(page => page.url);
-
-                    state.chapterCache.set(chapterId, pages);
-                }
-
-                if (session !== state.readerSession) {
-                    return;
-                }
-
-                state.pages = pages;
-
-                if (state.pages.length === 0) {
-                    showMessage(
-                        $("readerMessage"),
-                        "Страницы не найдены. Проверь JSON внизу страницы.",
-                        true
-                    );
-                    return;
-                }
-
-                preloadPage(0);
-                preloadPage(1);
-                preloadPage(2);
-
-                displayPage();
-            } catch (error) {
-                console.error(error);
-
-                if (session === state.readerSession) {
-                    showMessage(
-                        $("readerMessage"),
-                        "Не удалось загрузить страницы: " + error.message,
-                        true
-                    );
-                }
-            }
-        }
-
-        function displayPage() {
-            const pageIndex = state.currentPage;
-            const page = state.pages[pageIndex];
-
-            if (!page) {
-                return;
-            }
-
-            const image = $("readerImage");
-            const message = $("readerMessage");
-
-            message.classList.remove("hidden");
-            showMessage(message, "Загружаем страницу...", false, true);
-
-            $("imageInfo").classList.remove("hidden");
-
-            $("pageCounter").textContent =
-                "Страница " + (pageIndex + 1) +
-                " из " + state.pages.length;
-
-            $("directImageLink").href = page.url;
-            $("directImageLink").textContent = page.url;
-
-            $("openOriginalButton").onclick = () => {
-                window.open(page.url, "_blank", "noopener");
-            };
-
-            $("previousPage").disabled = pageIndex === 0;
-            $("nextPage").disabled = pageIndex >= state.pages.length - 1;
-
-            image.onerror = () => {
-                if (state.currentPage !== pageIndex) {
-                    return;
-                }
-
-                image.classList.add("hidden");
-
-                showMessage(
-                    message,
-                    "Не удалось загрузить изображение. Попробуй открыть прямую ссылку.",
-                    true
-                );
-            };
-
-            image.onload = () => {
-                if (state.currentPage !== pageIndex) {
-                    return;
-                }
-
-                message.classList.add("hidden");
-                image.classList.remove("hidden");
-                preloadNearbyPages();
-            };
-
-            image.decoding = "async";
-            image.fetchPriority = "high";
-            image.loading = "eager";
-            image.classList.remove("hidden");
-            image.src = page.url;
-
-            if (image.complete && image.naturalWidth > 0) {
-                message.classList.add("hidden");
-                image.classList.remove("hidden");
-            }
-
-            preloadNearbyPages();
-        }
-
-        $("refreshButton").addEventListener("click", loadLatest);
-
-        $("backToCatalog").addEventListener("click", () => {
-            showScreen("catalogScreen");
-        });
-
-        $("backToDetails").addEventListener("click", () => {
-            state.readerSession++;
-            showScreen("detailsScreen");
-        });
-
-        $("previousPage").addEventListener("click", () => {
-            if (state.currentPage > 0) {
-                state.currentPage--;
-                displayPage();
-            }
-        });
-
-        $("nextPage").addEventListener("click", () => {
-            if (state.currentPage < state.pages.length - 1) {
-                state.currentPage++;
-                displayPage();
-            }
-        });
-
-        $("copyImageLink").addEventListener("click", async () => {
-            const url = $("directImageLink").href;
-
-            try {
-                await navigator.clipboard.writeText(url);
-                $("copyImageLink").textContent = "Скопировано!";
-            } catch {
-                prompt("Скопируй прямую ссылку:", url);
-            }
-        });
-
-        document.addEventListener("keydown", event => {
-            if (!$("readerScreen").classList.contains("active")) {
-                return;
-            }
-
-            if (
-                event.key === "ArrowRight" &&
-                state.currentPage < state.pages.length - 1
-            ) {
-                state.currentPage++;
-                displayPage();
-            }
-
-            if (
-                event.key === "ArrowLeft" &&
-                state.currentPage > 0
-            ) {
-                state.currentPage--;
-                displayPage();
-            }
-        });
-
-        loadLatest();
-    </script>
+<header>
+  <div class="logo">Lib Club <span>Manga</span></div>
+  <div class="status" id="status">Подключение</div>
+</header>
+
+<main>
+<section id="catalogScreen" class="screen active">
+  <h1>Каталог манги</h1>
+  <p class="muted" id="languageLabel">Язык перевода: русский</p>
+  <form class="search" id="searchForm">
+    <input id="searchInput" placeholder="Название манги..." autocomplete="off">
+    <button type="submit">Найти</button>
+  </form>
+  <div class="search">
+    <button id="latestButton" type="button">Последние обновления</button>
+    <button id="moreButton" type="button">Ещё</button>
+  </div>
+  <div class="grid" id="catalog"></div>
+</section>
+
+<section id="detailsScreen" class="screen">
+  <button class="back" id="backCatalog">← Каталог</button>
+  <div id="details"></div>
+</section>
+
+<section id="readerScreen" class="screen">
+  <button class="back" id="backDetails">← К главам</button>
+  <div class="reader-top">
+    <div>
+      <h1 id="readerTitle">Чтение</h1>
+      <p class="muted" id="pageCount"></p>
+    </div>
+    <button id="openImage">Открыть оригинал</button>
+  </div>
+  <div class="nav">
+    <button id="prevPage">← Назад</button>
+    <button id="nextPage">Вперёд →</button>
+  </div>
+  <div id="readerMessage" class="message"></div>
+  <img id="readerImage" class="reader-image hidden" alt="Страница манги" decoding="async">
+  <p id="directLink" class="muted"></p>
+</section>
+
+<details>
+  <summary>Ответ API</summary>
+  <pre id="debug">Пока нет данных.</pre>
+</details>
+</main>
+
+<script>
+const API="https://api.mangadex.org";
+const LANG_NAMES={ru:"русский",uk:"украинский",en:"английский"};
+const state={
+  language:"ru",
+  query:"",
+  offset:0,
+  total:0,
+  manga:[],
+  selected:null,
+  chapters:[],
+  pages:[],
+  pageIndex:0,
+  requestId:0,
+  pageCache:new Map()
+};
+const $=id=>document.getElementById(id);
+
+function setStatus(text){$("status").textContent=text}
+function debug(data){$("debug").textContent=JSON.stringify(data,null,2)}
+function screen(id){
+  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+function message(el,text,error=false){
+  el.className="message"+(error?" error":"");
+  el.textContent=text;
+}
+function detectLanguage(text){
+  if(/[іїєґІЇЄҐ]/.test(text))return "uk";
+  if(/[а-яёА-ЯЁ]/.test(text))return "ru";
+  if(/[a-zA-Z]/.test(text))return "en";
+  const browser=(navigator.language||"ru").toLowerCase();
+  if(browser.startsWith("uk"))return "uk";
+  if(browser.startsWith("ru"))return "ru";
+  return "en";
+}
+function updateLanguage(text){
+  state.language=detectLanguage(text);
+  $("languageLabel").textContent="Язык перевода: "+LANG_NAMES[state.language];
+}
+async function api(path,params={}){
+  const url=new URL(API+path);
+  for(const [key,value] of Object.entries(params)){
+    if(Array.isArray(value))value.forEach(v=>url.searchParams.append(key,v));
+    else if(value!==undefined&&value!==null)url.searchParams.set(key,value);
+  }
+  const response=await fetch(url,{headers:{"Accept":"application/json"}});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const data=await response.json();
+  debug(data);
+  if(data.result==="error")throw new Error(data.errors?.[0]?.detail||"Ошибка API");
+  return data;
+}
+function titleOf(manga){
+  const titles=manga.attributes?.title||{};
+  return titles[ state.language ]||titles.en||Object.values(titles)[0]||"Без названия";
+}
+function descriptionOf(manga){
+  const descriptions=manga.attributes?.description||{};
+  return descriptions[state.language]||descriptions.en||Object.values(descriptions)[0]||"Описание отсутствует.";
+}
+function coverUrl(manga){
+  const relation=manga.relationships?.find(r=>r.type==="cover_art");
+  const file=relation?.attributes?.fileName;
+  return file?"https://uploads.mangadex.org/covers/"+manga.id+"/"+encodeURIComponent(file)+".256.jpg":"";
+}
+function formatDate(value){
+  if(!value)return "";
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?"":date.toLocaleDateString();
+}
+function addCard(manga,container){
+  const card=document.createElement("article");
+  card.className="card";
+  const box=document.createElement("div");
+  box.className="coverbox";
+  const img=document.createElement("img");
+  img.className="cover";
+  img.loading="lazy";
+  img.decoding="async";
+  img.alt=titleOf(manga);
+  img.src=coverUrl(manga);
+  img.onerror=()=>{img.style.visibility="hidden"};
+  box.appendChild(img);
+  const title=document.createElement("div");
+  title.className="card-title";
+  title.textContent=titleOf(manga);
+  const meta=document.createElement("div");
+  meta.className="card-meta";
+  meta.textContent=manga.attributes?.status||"";
+  card.append(box,title,meta);
+  card.addEventListener("click",()=>openManga(manga));
+  container.appendChild(card);
+}
+async function loadCatalog(reset=true){
+  if(reset){
+    state.offset=0;
+    state.manga=[];
+    $("catalog").replaceChildren();
+  }
+  const id=++state.requestId;
+  const catalog=$("catalog");
+  const notice=document.createElement("div");
+  notice.className="message";
+  notice.textContent="Загружаем каталог...";
+  catalog.appendChild(notice);
+  setStatus("Загрузка");
+  $("moreButton").disabled=true;
+  try{
+    const params={
+      limit:20,
+      offset:state.offset,
+      "contentRating[]":["safe","suggestive"],
+      "availableTranslatedLanguage[]":[state.language],
+      "includes[]":["cover_art"],
+      "order[latestUploadedChapter]":"desc"
+    };
+    if(state.query)params.title=state.query;
+    const data=await api("/manga",params);
+    if(id!==state.requestId)return;
+    notice.remove();
+    const items=data.data||[];
+    state.total=data.total||0;
+    state.manga.push(...items);
+    if(!items.length&&!state.manga.length){
+      message(catalog,"Манга с переводом на "+LANG_NAMES[state.language]+" не найдена.");
+    }else{
+      const fragment=document.createDocumentFragment();
+      items.forEach(manga=>addCard(manga,fragment));
+      catalog.appendChild(fragment);
+    }
+    state.offset+=items.length;
+    setStatus("Найдено: "+state.total);
+    $("moreButton").disabled=state.offset>=state.total||items.length===0;
+  }catch(error){
+    if(id!==state.requestId)return;
+    notice.remove();
+    message(catalog,"Ошибка загрузки: "+error.message,true);
+    setStatus("Ошибка");
+  }
+}
+async function openManga(manga){
+  state.selected=manga;
+  screen("detailsScreen");
+  const root=$("details");
+  root.replaceChildren();
+  const top=document.createElement("div");
+  top.className="details";
+  const cover=document.createElement("img");
+  cover.className="details-cover";
+  cover.src=coverUrl(manga);
+  cover.alt=titleOf(manga);
+  const info=document.createElement("div");
+  const title=document.createElement("h1");
+  title.textContent=titleOf(manga);
+  const description=document.createElement("p");
+  description.textContent=descriptionOf(manga);
+  const status=document.createElement("p");
+  status.className="muted";
+  status.textContent="Статус: "+(manga.attributes?.status||"неизвестен");
+  const genres=document.createElement("div");
+  genres.className="genres";
+  for(const tag of manga.attributes?.tags||[]){
+    const el=document.createElement("span");
+    el.className="genre";
+    el.textContent=tag.attributes?.name?.[state.language]||tag.attributes?.name?.en||"";
+    genres.appendChild(el);
+  }
+  info.append(title,status,description,genres);
+  top.append(cover,info);
+  const heading=document.createElement("h2");
+  heading.textContent="Главы · "+LANG_NAMES[state.language];
+  const list=document.createElement("div");
+  list.className="chapter-list";
+  root.append(top,heading,list);
+  message(list,"Загружаем главы...");
+  try{
+    const data=await api("/manga/"+manga.id+"/feed",{
+      limit:100,
+      offset:0,
+      "translatedLanguage[]":[state.language],
+      includeExternalUrl:false,
+      "order[chapter]":"asc",
+      "order[volume]":"asc"
+    });
+    if(state.selected!==manga)return;
+    state.chapters=data.data||[];
+    list.replaceChildren();
+    if(!state.chapters.length){
+      message(list,"Главы на выбранном языке не найдены.");
+      return;
+    }
+    for(const chapter of state.chapters){
+      const attrs=chapter.attributes||{};
+      const btn=document.createElement("button");
+      btn.className="chapter";
+      const name=document.createElement("span");
+      name.textContent=[
+        attrs.volume?"Том "+attrs.volume:"",
+        attrs.chapter?"Глава "+attrs.chapter:"",
+        attrs.title||""
+      ].filter(Boolean).join(" — ")||"Глава";
+      const date=document.createElement("small");
+      date.textContent=formatDate(attrs.publishAt);
+      btn.append(name,date);
+      btn.addEventListener("click",()=>openChapter(chapter));
+      list.appendChild(btn);
+    }
+  }catch(error){
+    message(list,"Не удалось загрузить главы: "+error.message,true);
+  }
+}
+async function openChapter(chapter){
+  const id=chapter.id;
+  state.pageIndex=0;
+  screen("readerScreen");
+  $("readerTitle").textContent=[
+    titleOf(state.selected),
+    chapter.attributes?.chapter?"Глава "+chapter.attributes.chapter:"",
+    chapter.attributes?.title||""
+  ].filter(Boolean).join(" — ");
+  message($("readerMessage"),"Получаем страницы...");
+  $("readerImage").classList.add("hidden");
+  try{
+    let pages=state.pageCache.get(id);
+    if(!pages){
+      const data=await api("/at-home/server/"+id);
+      const info=data.chapter;
+      if(!info||!data.baseUrl)throw new Error("Сервер не вернул данные изображений.");
+      pages=(info.dataSaver||info.data||[]).map(file=>
+        data.baseUrl+"/data-saver/"+info.hash+"/"+encodeURIComponent(file)
+      );
+      if(!info.dataSaver?.length){
+        pages=(info.data||[]).map(file=>
+          data.baseUrl+"/data/"+info.hash+"/"+encodeURIComponent(file)
+        );
+      }
+      state.pageCache.set(id,pages);
+    }
+    state.pages=pages;
+    if(!pages.length)throw new Error("В главе нет доступных страниц.");
+    displayPage();
+  }catch(error){
+    message($("readerMessage"),"Не удалось открыть главу: "+error.message,true);
+  }
+}
+function displayPage(){
+  const url=state.pages[state.pageIndex];
+  if(!url)return;
+  const img=$("readerImage");
+  const notice=$("readerMessage");
+  $("pageCount").textContent="Страница "+(state.pageIndex+1)+" из "+state.pages.length;
+  $("prevPage").disabled=state.pageIndex===0;
+  $("nextPage").disabled=state.pageIndex===state.pages.length-1;
+  $("directLink").replaceChildren();
+  const link=document.createElement("a");
+  link.href=url;
+  link.target="_blank";
+  link.rel="noopener";
+  link.textContent="Открыть прямую ссылку на изображение";
+  $("directLink").appendChild(link);
+  $("openImage").onclick=()=>window.open(url,"_blank","noopener");
+  message(notice,"Загружаем изображение...");
+  img.classList.remove("hidden");
+  img.onload=()=>{
+    notice.classList.add("hidden");
+    img.classList.remove("hidden");
+    preloadPage(state.pageIndex+1);
+    preloadPage(state.pageIndex+2);
+  };
+  img.onerror=()=>{
+    img.classList.add("hidden");
+    message(notice,"Не удалось загрузить изображение. Попробуй открыть прямую ссылку.",true);
+  };
+  img.src=url;
+  if(img.complete&&img.naturalWidth){
+    notice.classList.add("hidden");
+    img.classList.remove("hidden");
+  }
+  preloadPage(state.pageIndex+1);
+}
+function preloadPage(index){
+  const url=state.pages[index];
+  if(!url)return;
+  const img=new Image();
+  img.decoding="async";
+  img.src=url;
+}
+$("searchForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  state.query=$("searchInput").value.trim();
+  updateLanguage(state.query);
+  loadCatalog(true);
+});
+$("latestButton").addEventListener("click",()=>{
+  state.query="";
+  $("searchInput").value="";
+  updateLanguage("");
+  loadCatalog(true);
+});
+$("moreButton").addEventListener("click",()=>loadCatalog(false));
+$("backCatalog").addEventListener("click",()=>screen("catalogScreen"));
+$("backDetails").addEventListener("click",()=>screen("detailsScreen"));
+$("prevPage").addEventListener("click",()=>{
+  if(state.pageIndex>0){state.pageIndex--;displayPage()}
+});
+$("nextPage").addEventListener("click",()=>{
+  if(state.pageIndex<state.pages.length-1){state.pageIndex++;displayPage()}
+});
+document.addEventListener("keydown",event=>{
+  if(!$("readerScreen").classList.contains("active"))return;
+  if(event.key==="ArrowLeft"&&state.pageIndex>0){state.pageIndex--;displayPage()}
+  if(event.key==="ArrowRight"&&state.pageIndex<state.pages.length-1){state.pageIndex++;displayPage()}
+});
+updateLanguage("");
+loadCatalog(true);
+</script>
 </body>
 </html>
