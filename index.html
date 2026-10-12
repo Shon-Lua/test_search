@@ -6,416 +6,334 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lib Club Manga</title>
 <style>
-:root{color-scheme:dark;--bg:#101114;--panel:#191a20;--border:#30313a;--text:#f1f1f5;--muted:#9698a5;--accent:#a78bfa}
+:root{color-scheme:dark;--bg:#101116;--panel:#1b1c24;--line:#30313d;--text:#f5f5fa;--muted:#a6a7b5;--accent:#c5a4ff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 5%;background:#15161a;border-bottom:1px solid var(--border)}
-.logo{font-size:23px;font-weight:800}.logo span{color:var(--accent)}
-main{width:min(1400px,92%);margin:30px auto}
-h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px}
+body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,sans-serif}
+header{padding:18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#101116f2;z-index:2}
+nav,main{max-width:1100px;margin:auto}
+nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.logo{font-size:21px;font-weight:800;margin-right:auto}
+.logo span{color:var(--accent)}
+input,select,button{font:inherit;border-radius:10px;padding:10px 12px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+input{min-width:0;flex:1}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+.primary{background:var(--accent);color:#21182e;font-weight:700}
+main{padding:24px 18px 60px}
+h1{font-size:clamp(25px,4vw,36px);margin:0 0 18px}
 h2{font-size:22px}
-p{line-height:1.6}
-.muted,.status{color:var(--muted);font-size:13px}
-.search{display:flex;gap:8px;margin:20px 0}
-input,button{font:inherit}
-input{min-width:0;flex:1;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text)}
-button{padding:11px 15px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);cursor:pointer}
-button:hover:not(:disabled){background:#292a32}
-button:disabled{opacity:.4;cursor:default}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:20px;align-items:start}
-.card{min-width:0;cursor:pointer}
-.coverbox{aspect-ratio:3/4;overflow:hidden;border:1px solid var(--border);border-radius:9px;background:var(--panel)}
-.cover{display:block;width:100%;height:100%;object-fit:cover}
-.card-title{font-size:14px;font-weight:600;line-height:1.4;margin-top:9px;overflow-wrap:anywhere}
-.card-meta{font-size:12px;color:var(--muted);margin-top:5px}
-.screen{display:none}.screen.active{display:block}
-.back{margin-bottom:22px}
-.details{display:grid;grid-template-columns:190px minmax(0,1fr);gap:25px}
-.details-cover{width:100%;height:auto;border-radius:9px}
-.genres{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
-.genre{border:1px solid var(--border);border-radius:20px;padding:5px 9px;font-size:12px;color:var(--muted)}
-.chapter-list{display:grid;gap:8px;margin-top:16px}
-.chapter{display:flex;justify-content:space-between;gap:12px;text-align:left;align-items:center}
-.chapter span{overflow-wrap:anywhere}
-.reader-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.reader-image{display:block;width:auto;max-width:100%;height:auto;margin:15px auto;background:#fff}
-.nav{display:flex;justify-content:center;gap:12px;margin:18px 0}
-.message{padding:25px 12px;text-align:center;color:var(--muted);line-height:1.6}
-.error{color:#ff7777}
-a{color:var(--accent);overflow-wrap:anywhere}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto}
-details{margin-top:30px;border:1px solid var(--border);border-radius:9px;padding:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+#status,#debug{padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:15px 0;overflow-wrap:anywhere}
+#error{color:#ff9d9d}
+#debug{white-space:pre-wrap;font:12px ui-monospace,monospace;color:#c4c5d2;max-height:280px;overflow:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:16px}
+.card{cursor:pointer;min-width:0}
+.cover{width:100%;aspect-ratio:3/4.2;object-fit:cover;background:var(--panel);border-radius:10px}
+.card strong{display:block;margin-top:8px;font-size:14px}
+.muted{color:var(--muted);font-size:13px}
 .hidden{display:none!important}
-@media(max-width:600px){main{margin-top:22px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.details{grid-template-columns:110px minmax(0,1fr);gap:14px}.reader-image{width:100%}header{padding:16px 4%}}
+.detail{display:grid;grid-template-columns:180px 1fr;gap:22px}
+.detail img{width:100%;border-radius:12px}
+.chapters{display:grid;gap:8px;margin-top:15px}
+.chapters button{text-align:left}
+#pages img{display:block;width:100%;max-width:850px;height:auto;margin:0 auto 5px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:560px){.detail{grid-template-columns:110px 1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">Lib Club <span>Manga</span></div>
-  <div class="status" id="status">Подключение</div>
+<nav>
+<div class="logo">Lib Club <span>Manga</span></div>
+<input id="search" placeholder="Название манги">
+<button class="primary" id="searchBtn">Найти</button>
+</nav>
 </header>
-
 <main>
-<section id="catalogScreen" class="screen active">
-  <h1>Каталог манги</h1>
-  <p class="muted" id="languageLabel">Язык перевода: русский</p>
-  <form class="search" id="searchForm">
-    <input id="searchInput" placeholder="Название манги..." autocomplete="off">
-    <button type="submit">Найти</button>
-  </form>
-  <div class="search">
-    <button id="latestButton" type="button">Последние обновления</button>
-    <button id="moreButton" type="button">Ещё</button>
-  </div>
-  <div class="grid" id="catalog"></div>
+<section id="catalogView">
+<h1 id="heading">Каталог манги</h1>
+<div class="row">
+<label for="language">Язык:</label>
+<select id="language">
+<option value="auto">Автоматически</option>
+<option value="ru">Русский</option>
+<option value="en">English</option>
+<option value="uk">Українська</option>
+<option value="ja">日本語</option>
+</select>
+<button id="reload">Обновить</button>
+</div>
+<div id="status">Подготовка запроса…</div>
+<div id="debug"></div>
+<div class="grid" id="catalog"></div>
+<div class="row"><button id="more" class="hidden">Загрузить ещё</button></div>
 </section>
 
-<section id="detailsScreen" class="screen">
-  <button class="back" id="backCatalog">← Каталог</button>
-  <div id="details"></div>
+<section id="detailView" class="hidden">
+<button id="back">← Каталог</button>
+<div id="detail"></div>
+<h2>Главы</h2>
+<div class="row">
+<label for="chapterLang">Язык глав:</label>
+<select id="chapterLang">
+<option value="auto">Как в каталоге</option>
+<option value="ru">Русский</option>
+<option value="en">English</option>
+<option value="uk">Українська</option>
+<option value="ja">日本語</option>
+</select>
+</div>
+<div id="chapterStatus" class="muted"></div>
+<div class="chapters" id="chapters"></div>
 </section>
 
-<section id="readerScreen" class="screen">
-  <button class="back" id="backDetails">← К главам</button>
-  <div class="reader-top">
-    <div>
-      <h1 id="readerTitle">Чтение</h1>
-      <p class="muted" id="pageCount"></p>
-    </div>
-    <button id="openImage">Открыть оригинал</button>
-  </div>
-  <div class="nav">
-    <button id="prevPage">← Назад</button>
-    <button id="nextPage">Вперёд →</button>
-  </div>
-  <div id="readerMessage" class="message"></div>
-  <img id="readerImage" class="reader-image hidden" alt="Страница манги" decoding="async">
-  <p id="directLink" class="muted"></p>
+<section id="readerView" class="hidden">
+<button id="readerBack">← К главам</button>
+<h2 id="readerTitle">Читалка</h2>
+<div id="readerStatus" class="muted"></div>
+<div id="pages"></div>
 </section>
-
-<details>
-  <summary>Ответ API</summary>
-  <pre id="debug">Пока нет данных.</pre>
-</details>
 </main>
-
 <script>
 const API="https://api.mangadex.org";
-const LANG_NAMES={ru:"русский",uk:"украинский",en:"английский"};
-const state={
-  language:"ru",
-  query:"",
-  offset:0,
-  total:0,
-  manga:[],
-  selected:null,
-  chapters:[],
-  pages:[],
-  pageIndex:0,
-  requestId:0,
-  pageCache:new Map()
-};
 const $=id=>document.getElementById(id);
+const state={offset:0,limit:20,search:"",language:"ru",manga:null,chapters:[],mangaId:null};
+let requestNumber=0;
 
-function setStatus(text){$("status").textContent=text}
-function debug(data){$("debug").textContent=JSON.stringify(data,null,2)}
-function screen(id){
-  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
-  $(id).classList.add("active");
-  window.scrollTo(0,0);
+function detectLanguage(text=""){
+ if(/[іїєґІЇЄҐ]/.test(text))return"uk";
+ if(/[а-яёА-ЯЁ]/.test(text))return"ru";
+ if(/[a-zA-Z]/.test(text))return"en";
+ const lang=(navigator.language||"ru").toLowerCase();
+ if(lang.startsWith("uk"))return"uk";
+ if(lang.startsWith("ja"))return"ja";
+ if(lang.startsWith("ru"))return"ru";
+ return"en";
 }
-function message(el,text,error=false){
-  el.className="message"+(error?" error":"");
-  el.textContent=text;
+
+function currentLanguage(){
+ return $("language").value==="auto"?detectLanguage($("search").value):$("language").value;
 }
-function detectLanguage(text){
-  if(/[іїєґІЇЄҐ]/.test(text))return "uk";
-  if(/[а-яёА-ЯЁ]/.test(text))return "ru";
-  if(/[a-zA-Z]/.test(text))return "en";
-  const browser=(navigator.language||"ru").toLowerCase();
-  if(browser.startsWith("uk"))return "uk";
-  if(browser.startsWith("ru"))return "ru";
-  return "en";
+
+function chapterLanguage(){
+ return $("chapterLang").value==="auto"?state.language:$("chapterLang").value;
 }
-function updateLanguage(text){
-  state.language=detectLanguage(text);
-  $("languageLabel").textContent="Язык перевода: "+LANG_NAMES[state.language];
+
+function log(message){
+ const time=new Date().toLocaleTimeString();
+ $("debug").textContent=`[${time}] ${message}\n`+$("debug").textContent;
 }
-async function api(path,params={}){
-  const url=new URL(API+path);
-  for(const [key,value] of Object.entries(params)){
-    if(Array.isArray(value))value.forEach(v=>url.searchParams.append(key,v));
-    else if(value!==undefined&&value!==null)url.searchParams.set(key,value);
-  }
-  const response=await fetch(url,{headers:{"Accept":"application/json"}});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const data=await response.json();
-  debug(data);
-  if(data.result==="error")throw new Error(data.errors?.[0]?.detail||"Ошибка API");
-  return data;
+
+function status(message,error=false){
+ $("status").textContent=message;
+ $("status").style.color=error?"#ff9d9d":"";
 }
+
+function show(view){
+ $("catalogView").classList.toggle("hidden",view!=="catalog");
+ $("detailView").classList.toggle("hidden",view!=="detail");
+ $("readerView").classList.toggle("hidden",view!=="reader");
+ window.scrollTo(0,0);
+}
+
 function titleOf(manga){
-  const titles=manga.attributes?.title||{};
-  return titles[ state.language ]||titles.en||Object.values(titles)[0]||"Без названия";
+ const titles=manga.attributes?.title||{};
+ return titles[state.language]||titles.en||titles.ja||Object.values(titles)[0]||"Без названия";
 }
-function descriptionOf(manga){
-  const descriptions=manga.attributes?.description||{};
-  return descriptions[state.language]||descriptions.en||Object.values(descriptions)[0]||"Описание отсутствует.";
+
+function coverOf(manga){
+ const cover=(manga.relationships||[]).find(r=>r.type==="cover_art");
+ if(!cover?.attributes?.fileName)return"";
+ return `https://uploads.mangadex.org/covers/${manga.id}/${encodeURIComponent(cover.attributes.fileName)}.256.jpg`;
 }
-function coverUrl(manga){
-  const relation=manga.relationships?.find(r=>r.type==="cover_art");
-  const file=relation?.attributes?.fileName;
-  return file?"https://uploads.mangadex.org/covers/"+manga.id+"/"+encodeURIComponent(file)+".256.jpg":"";
+
+async function request(path,params={}){
+ const query=new URLSearchParams();
+ for(const [key,value] of Object.entries(params)){
+  if(Array.isArray(value))value.forEach(v=>query.append(key,v));
+  else if(value!==undefined&&value!==null&&value!=="")query.set(key,value);
+ }
+ const url=API+path+(query.size?"?"+query.toString():"");
+ log("GET "+url);
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),20000);
+ try{
+  const response=await fetch(url,{method:"GET",headers:{Accept:"application/json"},signal:controller.signal});
+  log("HTTP "+response.status+" "+url);
+  const text=await response.text();
+  let json;
+  try{json=JSON.parse(text)}catch{throw new Error("Ответ не является JSON. HTTP "+response.status)}
+  if(!response.ok)throw new Error("HTTP "+response.status+": "+(json.errors?.[0]?.detail||json.message||"ошибка API"));
+  return json;
+ }catch(error){
+  if(error.name==="AbortError")throw new Error("Тайм-аут запроса");
+  if(error instanceof TypeError){
+   throw new Error("Браузер не разрешил прочитать ответ. Возможна блокировка CORS или сетевая ошибка. Открой DevTools → Console для уточнения.");
+  }
+  throw error;
+ }finally{
+  clearTimeout(timer);
+ }
 }
-function formatDate(value){
-  if(!value)return "";
-  const date=new Date(value);
-  return Number.isNaN(date.getTime())?"":date.toLocaleDateString();
+
+function addCard(manga){
+ const card=document.createElement("article");
+ card.className="card";
+ const img=document.createElement("img");
+ img.className="cover";
+ img.loading="lazy";
+ img.alt=titleOf(manga);
+ img.src=coverOf(manga);
+ img.onerror=()=>{img.removeAttribute("src");img.alt="Обложка недоступна"};
+ const name=document.createElement("strong");
+ name.textContent=titleOf(manga);
+ const sub=document.createElement("div");
+ sub.className="muted";
+ sub.textContent=manga.attributes?.status||"";
+ card.append(img,name,sub);
+ card.onclick=()=>openManga(manga.id);
+ $("catalog").append(card);
 }
-function addCard(manga,container){
-  const card=document.createElement("article");
-  card.className="card";
-  const box=document.createElement("div");
-  box.className="coverbox";
-  const img=document.createElement("img");
-  img.className="cover";
-  img.loading="lazy";
-  img.decoding="async";
-  img.alt=titleOf(manga);
-  img.src=coverUrl(manga);
-  img.onerror=()=>{img.style.visibility="hidden"};
-  box.appendChild(img);
-  const title=document.createElement("div");
-  title.className="card-title";
-  title.textContent=titleOf(manga);
-  const meta=document.createElement("div");
-  meta.className="card-meta";
-  meta.textContent=manga.attributes?.status||"";
-  card.append(box,title,meta);
-  card.addEventListener("click",()=>openManga(manga));
-  container.appendChild(card);
-}
+
 async function loadCatalog(reset=true){
-  if(reset){
-    state.offset=0;
-    state.manga=[];
-    $("catalog").replaceChildren();
-  }
-  const id=++state.requestId;
-  const catalog=$("catalog");
-  const notice=document.createElement("div");
-  notice.className="message";
-  notice.textContent="Загружаем каталог...";
-  catalog.appendChild(notice);
-  setStatus("Загрузка");
-  $("moreButton").disabled=true;
-  try{
-    const params={
-      limit:20,
-      offset:state.offset,
-      "contentRating[]":["safe","suggestive"],
-      "availableTranslatedLanguage[]":[state.language],
-      "includes[]":["cover_art"],
-      "order[latestUploadedChapter]":"desc"
-    };
-    if(state.query)params.title=state.query;
-    const data=await api("/manga",params);
-    if(id!==state.requestId)return;
-    notice.remove();
-    const items=data.data||[];
-    state.total=data.total||0;
-    state.manga.push(...items);
-    if(!items.length&&!state.manga.length){
-      message(catalog,"Манга с переводом на "+LANG_NAMES[state.language]+" не найдена.");
-    }else{
-      const fragment=document.createDocumentFragment();
-      items.forEach(manga=>addCard(manga,fragment));
-      catalog.appendChild(fragment);
-    }
-    state.offset+=items.length;
-    setStatus("Найдено: "+state.total);
-    $("moreButton").disabled=state.offset>=state.total||items.length===0;
-  }catch(error){
-    if(id!==state.requestId)return;
-    notice.remove();
-    message(catalog,"Ошибка загрузки: "+error.message,true);
-    setStatus("Ошибка");
-  }
+ const id=++requestNumber;
+ state.language=currentLanguage();
+ if(reset){
+  state.offset=0;
+  $("catalog").replaceChildren();
+ }
+ $("more").classList.add("hidden");
+ status("Выполняется запрос к MangaDex…");
+ const params={
+  limit:state.limit,
+  offset:state.offset,
+  "contentRating[]":["safe","suggestive"],
+  "availableTranslatedLanguage[]":[state.language],
+  "includes[]":["cover_art"],
+  "order[followedCount]":"desc"
+ };
+ if(state.search)params.title=state.search;
+ try{
+  const result=await request("/manga",params);
+  if(id!==requestNumber)return;
+  const items=result.data||[];
+  items.forEach(addCard);
+  state.offset+=items.length;
+  status(`Получено объектов: ${items.length}. Язык: ${state.language}. Всего по ответу: ${result.total??"не указано"}.`);
+  $("more").classList.toggle("hidden",items.length<state.limit);
+  if(!items.length&&reset)$("catalog").textContent="Ничего не найдено.";
+ }catch(error){
+  if(id!==requestNumber)return;
+  status(error.message,true);
+  log("ERROR "+error.message);
+ }
 }
-async function openManga(manga){
-  state.selected=manga;
-  screen("detailsScreen");
-  const root=$("details");
-  root.replaceChildren();
-  const top=document.createElement("div");
-  top.className="details";
-  const cover=document.createElement("img");
-  cover.className="details-cover";
-  cover.src=coverUrl(manga);
-  cover.alt=titleOf(manga);
+
+async function openManga(id){
+ state.mangaId=id;
+ state.chapters=[];
+ $("detail").replaceChildren();
+ $("chapters").replaceChildren();
+ $("chapterStatus").textContent="Загрузка информации о манге…";
+ show("detail");
+ try{
+  const result=await request("/manga/"+encodeURIComponent(id),{"includes[]":["cover_art","author","artist"]});
+  state.manga=result.data;
+  const manga=state.manga;
+  const wrap=document.createElement("div");
+  wrap.className="detail";
+  const img=document.createElement("img");
+  img.src=coverOf(manga);
+  img.alt=titleOf(manga);
+  img.onerror=()=>img.removeAttribute("src");
   const info=document.createElement("div");
-  const title=document.createElement("h1");
-  title.textContent=titleOf(manga);
-  const description=document.createElement("p");
-  description.textContent=descriptionOf(manga);
-  const status=document.createElement("p");
-  status.className="muted";
-  status.textContent="Статус: "+(manga.attributes?.status||"неизвестен");
-  const genres=document.createElement("div");
-  genres.className="genres";
-  for(const tag of manga.attributes?.tags||[]){
-    const el=document.createElement("span");
-    el.className="genre";
-    el.textContent=tag.attributes?.name?.[state.language]||tag.attributes?.name?.en||"";
-    genres.appendChild(el);
-  }
-  info.append(title,status,description,genres);
-  top.append(cover,info);
-  const heading=document.createElement("h2");
-  heading.textContent="Главы · "+LANG_NAMES[state.language];
-  const list=document.createElement("div");
-  list.className="chapter-list";
-  root.append(top,heading,list);
-  message(list,"Загружаем главы...");
-  try{
-    const data=await api("/manga/"+manga.id+"/feed",{
-      limit:100,
-      offset:0,
-      "translatedLanguage[]":[state.language],
-      includeExternalUrl:false,
-      "order[chapter]":"asc",
-      "order[volume]":"asc"
-    });
-    if(state.selected!==manga)return;
-    state.chapters=data.data||[];
-    list.replaceChildren();
-    if(!state.chapters.length){
-      message(list,"Главы на выбранном языке не найдены.");
-      return;
-    }
-    for(const chapter of state.chapters){
-      const attrs=chapter.attributes||{};
-      const btn=document.createElement("button");
-      btn.className="chapter";
-      const name=document.createElement("span");
-      name.textContent=[
-        attrs.volume?"Том "+attrs.volume:"",
-        attrs.chapter?"Глава "+attrs.chapter:"",
-        attrs.title||""
-      ].filter(Boolean).join(" — ")||"Глава";
-      const date=document.createElement("small");
-      date.textContent=formatDate(attrs.publishAt);
-      btn.append(name,date);
-      btn.addEventListener("click",()=>openChapter(chapter));
-      list.appendChild(btn);
-    }
-  }catch(error){
-    message(list,"Не удалось загрузить главы: "+error.message,true);
-  }
+  const h=document.createElement("h1");
+  h.textContent=titleOf(manga);
+  const desc=document.createElement("p");
+  const d=manga.attributes?.description||{};
+  desc.textContent=d[state.language]||d.en||d.ru||Object.values(d)[0]||"Описание отсутствует.";
+  const meta=document.createElement("p");
+  meta.className="muted";
+  meta.textContent=[manga.attributes?.status,manga.attributes?.year,manga.attributes?.originalLanguage].filter(Boolean).join(" · ");
+  info.append(h,meta,desc);
+  wrap.append(img,info);
+  $("detail").append(wrap);
+  await loadChapters();
+ }catch(error){
+  $("chapterStatus").textContent=error.message;
+  log("ERROR "+error.message);
+ }
 }
+
+async function loadChapters(){
+ $("chapters").replaceChildren();
+ $("chapterStatus").textContent="Запрос списка глав…";
+ try{
+  const result=await request(`/manga/${encodeURIComponent(state.mangaId)}/feed`,{
+   limit:100,
+   offset:0,
+   "translatedLanguage[]":[chapterLanguage()],
+   "order[volume]":"asc",
+   "order[chapter]":"asc",
+   includeExternalUrl:false
+  });
+  state.chapters=result.data||[];
+  $("chapterStatus").textContent=`Получено глав: ${state.chapters.length}. Язык: ${chapterLanguage()}.`;
+  state.chapters.forEach(chapter=>{
+   const button=document.createElement("button");
+   const a=chapter.attributes||{};
+   button.textContent=[a.chapter?`Глава ${a.chapter}`:"Глава без номера",a.title].filter(Boolean).join(" — ");
+   button.onclick=()=>openChapter(chapter);
+   $("chapters").append(button);
+  });
+  if(!state.chapters.length)$("chapterStatus").textContent+=" Для этой манги нет глав на выбранном языке.";
+ }catch(error){
+  $("chapterStatus").textContent=error.message;
+  log("ERROR "+error.message);
+ }
+}
+
 async function openChapter(chapter){
-  const id=chapter.id;
-  state.pageIndex=0;
-  screen("readerScreen");
-  $("readerTitle").textContent=[
-    titleOf(state.selected),
-    chapter.attributes?.chapter?"Глава "+chapter.attributes.chapter:"",
-    chapter.attributes?.title||""
-  ].filter(Boolean).join(" — ");
-  message($("readerMessage"),"Получаем страницы...");
-  $("readerImage").classList.add("hidden");
-  try{
-    let pages=state.pageCache.get(id);
-    if(!pages){
-      const data=await api("/at-home/server/"+id);
-      const info=data.chapter;
-      if(!info||!data.baseUrl)throw new Error("Сервер не вернул данные изображений.");
-      pages=(info.dataSaver||info.data||[]).map(file=>
-        data.baseUrl+"/data-saver/"+info.hash+"/"+encodeURIComponent(file)
-      );
-      if(!info.dataSaver?.length){
-        pages=(info.data||[]).map(file=>
-          data.baseUrl+"/data/"+info.hash+"/"+encodeURIComponent(file)
-        );
-      }
-      state.pageCache.set(id,pages);
-    }
-    state.pages=pages;
-    if(!pages.length)throw new Error("В главе нет доступных страниц.");
-    displayPage();
-  }catch(error){
-    message($("readerMessage"),"Не удалось открыть главу: "+error.message,true);
-  }
+ show("reader");
+ $("pages").replaceChildren();
+ $("readerTitle").textContent=`Глава ${chapter.attributes?.chapter||""} ${chapter.attributes?.title||""}`;
+ $("readerStatus").textContent="Запрос данных MangaDex@Home…";
+ try{
+  const result=await request("/at-home/server/"+encodeURIComponent(chapter.id),{forcePort443:true});
+  const data=result.chapter;
+  const files=data?.dataSaver?.length?data.dataSaver:data?.data;
+  const quality=data?.dataSaver?.length?"data-saver":"data";
+  if(!result.baseUrl||!data?.hash||!files?.length)throw new Error("API не вернул данные страниц");
+  $("readerStatus").textContent=`Страниц: ${files.length}. Качество: ${quality}.`;
+  files.forEach((file,index)=>{
+   const img=document.createElement("img");
+   img.loading=index<2?"eager":"lazy";
+   img.alt="Страница "+(index+1);
+   img.src=`${result.baseUrl}/${quality}/${data.hash}/${encodeURIComponent(file)}`;
+   img.onerror=()=>{img.alt="Не удалось загрузить страницу "+(index+1);log("IMAGE ERROR "+img.src)};
+   $("pages").append(img);
+  });
+ }catch(error){
+  $("readerStatus").textContent=error.message;
+  log("ERROR "+error.message);
+ }
 }
-function displayPage(){
-  const url=state.pages[state.pageIndex];
-  if(!url)return;
-  const img=$("readerImage");
-  const notice=$("readerMessage");
-  $("pageCount").textContent="Страница "+(state.pageIndex+1)+" из "+state.pages.length;
-  $("prevPage").disabled=state.pageIndex===0;
-  $("nextPage").disabled=state.pageIndex===state.pages.length-1;
-  $("directLink").replaceChildren();
-  const link=document.createElement("a");
-  link.href=url;
-  link.target="_blank";
-  link.rel="noopener";
-  link.textContent="Открыть прямую ссылку на изображение";
-  $("directLink").appendChild(link);
-  $("openImage").onclick=()=>window.open(url,"_blank","noopener");
-  message(notice,"Загружаем изображение...");
-  img.classList.remove("hidden");
-  img.onload=()=>{
-    notice.classList.add("hidden");
-    img.classList.remove("hidden");
-    preloadPage(state.pageIndex+1);
-    preloadPage(state.pageIndex+2);
-  };
-  img.onerror=()=>{
-    img.classList.add("hidden");
-    message(notice,"Не удалось загрузить изображение. Попробуй открыть прямую ссылку.",true);
-  };
-  img.src=url;
-  if(img.complete&&img.naturalWidth){
-    notice.classList.add("hidden");
-    img.classList.remove("hidden");
-  }
-  preloadPage(state.pageIndex+1);
-}
-function preloadPage(index){
-  const url=state.pages[index];
-  if(!url)return;
-  const img=new Image();
-  img.decoding="async";
-  img.src=url;
-}
-$("searchForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  state.query=$("searchInput").value.trim();
-  updateLanguage(state.query);
-  loadCatalog(true);
-});
-$("latestButton").addEventListener("click",()=>{
-  state.query="";
-  $("searchInput").value="";
-  updateLanguage("");
-  loadCatalog(true);
-});
-$("moreButton").addEventListener("click",()=>loadCatalog(false));
-$("backCatalog").addEventListener("click",()=>screen("catalogScreen"));
-$("backDetails").addEventListener("click",()=>screen("detailsScreen"));
-$("prevPage").addEventListener("click",()=>{
-  if(state.pageIndex>0){state.pageIndex--;displayPage()}
-});
-$("nextPage").addEventListener("click",()=>{
-  if(state.pageIndex<state.pages.length-1){state.pageIndex++;displayPage()}
-});
-document.addEventListener("keydown",event=>{
-  if(!$("readerScreen").classList.contains("active"))return;
-  if(event.key==="ArrowLeft"&&state.pageIndex>0){state.pageIndex--;displayPage()}
-  if(event.key==="ArrowRight"&&state.pageIndex<state.pages.length-1){state.pageIndex++;displayPage()}
-});
-updateLanguage("");
+
+$("searchBtn").onclick=()=>{
+ state.search=$("search").value.trim();
+ $("heading").textContent=state.search?"Результаты поиска":"Каталог манги";
+ show("catalog");
+ loadCatalog(true);
+};
+$("search").addEventListener("keydown",e=>{if(e.key==="Enter")$("searchBtn").click()});
+$("reload").onclick=()=>loadCatalog(true);
+$("more").onclick=()=>loadCatalog(false);
+$("language").onchange=()=>loadCatalog(true);
+$("chapterLang").onchange=loadChapters;
+$("back").onclick=()=>show("catalog");
+$("readerBack").onclick=()=>show("detail");
+
+state.language=detectLanguage();
 loadCatalog(true);
 </script>
 </body>
